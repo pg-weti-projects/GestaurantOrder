@@ -2,20 +2,17 @@ from PySide6.QtWidgets import QApplication
 import sys
 import tomllib
 
-from logger import Logger
-from widgets.main_window import MainWindow
+from utils import Logger
+from main_window import MainApp
 
 
 def create_app(logger) -> None:
     """
     Creates app instance.
-
-    Returns:
-        App instance
     """
     app = QApplication(sys.argv)
-
-    main_window = MainWindow(logger)
+    main_window = MainApp(logger)
+    logger.info("Application starting")
     main_window.show()
     sys.exit(app.exec())
 
@@ -23,12 +20,12 @@ def create_app(logger) -> None:
 if __name__ == "__main__":
     logger = Logger("LOGGER").get_logger()
 
-    try:
-        with open("config.toml", "rb") as cfg_file:
-            cfg = tomllib.load(cfg_file)
-    except FileNotFoundError:
-        logger.error("Could not find config.toml file!")
-        sys.exit(1)
+    # TODO at the moment we don't use config file
+    # try:
+    #     with open("config.toml", "rb") as cfg_file:
+    #         cfg = tomllib.load(cfg_file)
+    # except FileNotFoundError:
+    #     logger.error("Could not find config.toml file!")
+    #     sys.exit(1)
 
-    logger.info("Application starting")
     create_app(logger)
