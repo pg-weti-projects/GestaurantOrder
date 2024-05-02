@@ -1,6 +1,6 @@
 from PySide6.QtWidgets import QMainWindow
 from PySide6.QtCore import QThread
-
+from camera.custom import Camera
 from engine import Engine
 from ui.widget import Widget
 from utils import Utils
@@ -22,6 +22,9 @@ class MainApp(QMainWindow):
         # Sample widget
         self.widget = Widget()
         self.setCentralWidget(self.widget)
+
+        self.camera = Camera()
+        self.camera.capture_image()
 
     def __init_engine_thread(self):
         self.engine_thread = QThread()
