@@ -1,6 +1,7 @@
 from abc import ABC
 import cv2
 from PySide6.QtCore import Signal
+from cvzone import HandTrackingModule
 
 
 class Camera(ABC):
@@ -12,6 +13,7 @@ class Camera(ABC):
     def __init__(self):
         super().__init__()
         self.cap = cv2.VideoCapture(0)
+        self.hand = HandTrackingModule.HandDetector()
 
         if not self.cap.isOpened():
             raise ValueError("Could not open video stream from selected camera!")
@@ -19,6 +21,7 @@ class Camera(ABC):
     def capture_image(self):
         while self.cap.isOpened():
             ret, frame = self.cap.read()
+            hands, frame = self.hand.findHands(frame)
             if ret:
                 cv2.imshow('Web', frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
