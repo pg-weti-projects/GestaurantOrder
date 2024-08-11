@@ -1,9 +1,9 @@
 from PySide6.QtWidgets import QMainWindow
 from PySide6.QtCore import QThread
-from camera.custom import Camera
 from engine import Engine
 from ui.widget import Widget
 from utils import Utils
+from camera.gesture.hand import GestureDetector
 
 
 class MainApp(QMainWindow):
@@ -23,7 +23,7 @@ class MainApp(QMainWindow):
         self.widget = Widget()
         self.setCentralWidget(self.widget)
 
-        self.camera = Camera()
+        self.camera = GestureDetector()
         self.camera.capture_image()
 
     def __init_engine_thread(self):

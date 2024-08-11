@@ -23,6 +23,8 @@ class Camera(ABC):
             ret, frame = self.cap.read()
             hands, frame = self.hand.findHands(frame)
             if ret:
+                gestures = self.detect_gesture(hands)
+                self.display_gestures(frame, gestures)
                 cv2.imshow('Web', frame)
                 if cv2.waitKey(1) & 0xFF == ord('q'):
                     break
@@ -30,6 +32,12 @@ class Camera(ABC):
                 raise ValueError("Failed to capture image from camera!")
         self.cap.release()
         cv2.destroyAllWindows()
+
+    def detect_gesture(self, hands):
+        pass
+
+    def display_gestures(self, frame, gestures):
+        pass
 
     def __del__(self):
         self.cap.release()
