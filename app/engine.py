@@ -1,16 +1,29 @@
-from PySide6.QtCore import QObject
-import time
+from PySide6.QtCore import QObject, QThread, Signal
+from PySide6.QtGui import QImage
+
+from camera.user_camera import UserCamera
 
 
 class Engine(QObject):
+    frame_ready = Signal(QImage)
+
     def __init__(self, logger):
         super().__init__()
         self.logger = logger
+        self.camera = UserCamera()
 
-    def run_process(self):
-        while True:
-            self.logger.info("Processing frame etc.")
-            time.sleep(3)
-            # TODO: Here we define gathering and processing for each frame ( actually every operations that must be
-            #  used on other thread. We also define all processes related to each frame and each 'program round'.
-            #  We can use PyQt Signals to connect most elements. You can define here frame gathering.
+        self.camera_thread = QThread()
+        self.camera.moveToThread(self.camera_thread)
+        self.camera.frame_ready.connect(self.process_frame)
+        self.camera_thread.started.connect(self.camera.capture_image)
+
+    def start(self):
+        self.camera_thread.start()
+
+    def stop(self):
+        self.camera.stop()
+        self.camera_thread.quit()
+        self.camera_thread.wait()
+
+    def process_frame(self, frame):
+        self.frame_ready.emit(frame)
