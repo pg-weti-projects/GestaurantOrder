@@ -12,7 +12,7 @@ class Camera(ABC):
 
     def __init__(self):
         super().__init__()
-        self.cap = cv2.VideoCapture(0)
+        self.cap = cv2.VideoCapture(1)
         self.hand = HandTrackingModule.HandDetector()
 
         if not self.cap.isOpened():
@@ -22,6 +22,9 @@ class Camera(ABC):
         while self.cap.isOpened():
             ret, frame = self.cap.read()
             hands, frame = self.hand.findHands(frame)
+            if not ret:
+                print("Warning: Frame capture failed. Retrying...")
+                continue
             if ret:
                 gestures = self.detect_gesture(hands)
                 self.display_gestures(frame, gestures)
