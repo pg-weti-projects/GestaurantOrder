@@ -10,7 +10,7 @@ class Engine(QObject):
     def __init__(self, logger):
         super().__init__()
         self.logger = logger
-        self.camera = UserCamera()
+        self.camera = UserCamera(self.logger)
 
         self.camera_thread = QThread()
         self.camera.moveToThread(self.camera_thread)

@@ -1,6 +1,5 @@
 from PySide6.QtWidgets import QApplication
 import sys
-import tomllib
 
 from utils import Logger
 from main_window import MainApp
