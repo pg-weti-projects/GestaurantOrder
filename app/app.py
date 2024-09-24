@@ -1,8 +1,12 @@
+import os
+
 from PySide6.QtWidgets import QApplication
 import sys
 from utils import Logger
 from main_window import MainApp
+from Mongo.mongo_manager import MongoManager
 
+mongo_manager = MongoManager()
 
 def create_app(logger, mode) -> None:
     """
@@ -15,18 +19,11 @@ def create_app(logger, mode) -> None:
     sys.exit(app.exec())
 
 def get_user_mode():
-    print("Chose mode:")
-    print("1 - fingers")
-    print("2 - mediapipe")
-    choice = input("Enter your choice 1 or 2: ")
-    if choice == "1":
+    mode = os.getenv('APP_MODE', 'fingers')
+    if mode not in ['fingers', 'mediapipe']:
+        print("Invalid mode in environment!")
         return "fingers"
-    elif choice == "2":
-        return "mediapipe"
-    else:
-        print("Invalid choice!")
-        print("Default choice 1 - fingers")
-        return "fingers"
+    return mode
 
 if __name__ == "__main__":
     logger = Logger("LOGGER").get_logger()
