@@ -11,12 +11,12 @@ class MainApp(QMainWindow):
     """
     Main window class for the GUI
     """
-    def __init__(self, logger):
+    def __init__(self, logger, mode):
         super().__init__()
         self.setWindowTitle("Gestaurant Order")
         self.logger = logger
         self.utils = Utils(logger)
-        self.engine = Engine(logger)
+        self.engine = Engine(logger, mode)
 
         self.widgets = Widgets(self.utils.get_monitor_geometry(), self)
         self.helper_widget = self.widgets.create_helper_widget()
