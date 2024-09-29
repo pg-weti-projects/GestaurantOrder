@@ -38,7 +38,7 @@ if __name__ == "__main__":
     if APP_DEBUG_MODE_ENABLED:
         logger.info("APP DEBUG MODE IS ENABLED!")
     docker_compose_path = "docker-compose.yml"
-    containers_start_parallel = os.getenv('CONTAINERS_START_PARALLEL')
+    containers_start_parallel = os.getenv('CONTAINERS_START_PARALLEL') == "true"
     dm = DockerManager()
 
     try:
