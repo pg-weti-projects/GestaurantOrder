@@ -1,24 +1,9 @@
 version: '3.8'
 
 services:
-  app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: gestaurant-app
-    environment:
-      - APP_MODE=fingers
-      - QT_QPA_PLATFORM=xcb
-      - DISPLAY=host.docker.internal:0
-    volumes:
-      - ./logs:/logs
-    ports:
-      - "8085:8085"
-    depends_on:
-      - mongo
   mongodb:
     image: mongo:7.0.2
-    container_name: mongo
+    container_name: mongodb
     volumes:
       - ./database_data:/data/db
     ports:

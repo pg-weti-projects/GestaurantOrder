@@ -5,8 +5,10 @@ import sys
 from utils import Logger
 from main_window import MainApp
 from Mongo.mongo_manager import MongoManager
+from dotenv import load_dotenv
 
 mongo_manager = MongoManager()
+load_dotenv()
 
 def create_app(logger, mode) -> None:
     """
