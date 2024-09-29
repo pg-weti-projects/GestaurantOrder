@@ -1,15 +1,17 @@
-from PySide6.QtCore import QObject, QThread, Signal
-from PySide6.QtGui import QImage
 from camera.gesture.fingers import FingersDetector
 from camera.gesture.hands import GestureDetector
 import cv2
+import logging
+from PySide6.QtCore import QObject, QThread, Signal
+from PySide6.QtGui import QImage
+
+logger = logging.getLogger("app")
 
 class Engine(QObject):
     frame_ready = Signal(QImage)
 
-    def __init__(self, logger, mode):
+    def __init__(self, mode: str):
         super().__init__()
-        self.logger = logger
         self.mode = mode
 
         # Initialize the appropriate detector based on the mode
@@ -33,9 +35,9 @@ class Engine(QObject):
             # Start capturing and detecting based on the selected mode
             self.detector.capture_image()
         except ValueError as e:
-            print(f"Error: {e}")
+            logger.error(f"Error: {e}")
         except Exception as e:
-            print(f"Unexpected error: {e}")
+            logger.error(f"Unexpected error: {e}")
         finally:
             cv2.destroyAllWindows()
 

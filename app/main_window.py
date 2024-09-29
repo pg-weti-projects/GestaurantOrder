@@ -1,3 +1,4 @@
+import logging
 from PySide6.QtWidgets import QMainWindow
 from PySide6.QtGui import QPixmap, QImage
 from PySide6.QtCore import Slot, Qt
@@ -6,17 +7,18 @@ from engine import Engine
 from ui.widgets import Widgets
 from utils import Utils
 
+logger = logging.getLogger("app")
+
 
 class MainApp(QMainWindow):
     """
     Main window class for the GUI
     """
-    def __init__(self, logger, mode):
+    def __init__(self, mode):
         super().__init__()
         self.setWindowTitle("Gestaurant Order")
-        self.logger = logger
-        self.utils = Utils(logger)
-        self.engine = Engine(logger, mode)
+        self.utils = Utils()
+        self.engine = Engine(mode)
 
         self.widgets = Widgets(self.utils.get_monitor_geometry(), self)
         self.helper_widget = self.widgets.create_helper_widget()

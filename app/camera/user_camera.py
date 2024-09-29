@@ -1,9 +1,10 @@
-import cv2
 from abc import abstractmethod
+import cv2
+from cvzone import HandTrackingModule
 import mediapipe as mp
+import os
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtGui import QImage
-from cvzone import HandTrackingModule
 
 
 class UserCamera(QObject):
@@ -17,7 +18,7 @@ class UserCamera(QObject):
                     or 'mediapipe' for gesture detection using MediaPipe. Default is 'fingers'.
         """
         super().__init__()
-        self.cap = cv2.VideoCapture(1)
+        self.cap = cv2.VideoCapture(int(os.getenv('CAMERA_NUMBER')))
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         self.running = True

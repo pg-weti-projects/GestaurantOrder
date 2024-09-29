@@ -1,14 +1,9 @@
 import logging
 from pymongo import MongoClient
-from os.path import join, dirname
-from dotenv import load_dotenv
+from pymongo.errors import ServerSelectionTimeoutError
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
+logger = logging.getLogger("app")
 
-dotenv_path = join(dirname(__file__), '.env')
-load_dotenv(dotenv_path)
 
 class MongoManager:
 
@@ -22,3 +17,15 @@ class MongoManager:
             logger.info("Connected to MongoDB successfully!")
         except Exception as e:
             logger.error(f"Failed to connect to MongoDB: {e}")
+
+    def check_mongo_connection(self) -> bool:
+        """
+        Performs a ping command on MongoDB client and checks a connection to the database is possible.
+
+        Returns: Returns True if connection is established, False otherwise.
+        """
+        try:
+            self.client.admin.command("ping")
+            return True
+        except ServerSelectionTimeoutError as e:
+            return False
