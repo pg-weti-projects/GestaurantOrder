@@ -1,0 +1,28 @@
+version: '3.8'
+
+services:
+  mongodb:
+    image: mongo:7.0.2
+    container_name: mongodb
+    volumes:
+      - ./database_data:/data/db
+    ports:
+      - 27017:27017
+    networks:
+      - mongo-database
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongoui
+    environment:
+      ME_CONFIG_MONGODB_SERVER: mongodb
+      ME_CONFIG_BASICAUTH_USERNAME: ${MONGOEXPRESS_LOGIN}
+      ME_CONFIG_BASICAUTH_PASSWORD: ${MONGOEXPRESS_PASSWORD}
+    ports:
+      - 8080:8081
+    networks:
+      - mongo-database
+
+networks:
+  mongo-database:
+    driver: bridge
