@@ -43,7 +43,7 @@ class LoggerManager:
 
         if debug_mode_enabled:
             log_dir = "logs/logs.log"
-            self._logger.info(f"Logs will be also saved to: {log_dir}")
+            self._logger.info(f"Debug mode is enabled. Logs will be saved to file: {log_dir}")
             file_handler = logging.FileHandler(log_dir)
             file_handler.setFormatter(formatter)
             self._logger.addHandler(file_handler)
