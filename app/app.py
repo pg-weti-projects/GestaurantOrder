@@ -1,41 +1,54 @@
+from dotenv import load_dotenv
+import logging
 import os
-
 from PySide6.QtWidgets import QApplication
 import sys
-from utils import Logger
+
 from main_window import MainApp
-from Mongo.mongo_manager import MongoManager
-from dotenv import load_dotenv
+from utils import DockerManager, LoggerManager
 
-mongo_manager = MongoManager()
 load_dotenv()
+APP_DEBUG_MODE_ENABLED = os.getenv('APP_DEBUG_MODE') == "true"
 
-def create_app(logger, mode) -> None:
+LoggerManager("app", APP_DEBUG_MODE_ENABLED)
+logger = logging.getLogger("app")
+
+
+def create_and_run_app() -> None:
     """
     Creates app instance.
     """
     app = QApplication(sys.argv)
-    main_window = MainApp(logger, mode)
-    logger.info("Application starting")
+    main_window = MainApp(get_user_detection_mode())
+    logger.info("App starting")
     main_window.show()
-    sys.exit(app.exec())
+    app.exec()
+    logger.info("App stopped.")
 
-def get_user_mode():
-    mode = os.getenv('APP_MODE', 'fingers')
-    if mode not in ['fingers', 'mediapipe']:
+
+def get_user_detection_mode() -> str:
+    env_detection_mode = os.getenv('APP_DETECTION_MODE', 'fingers')
+    if env_detection_mode not in ['fingers', 'mediapipe']:
         print("Invalid mode in environment!")
         return "fingers"
-    return mode
+    return env_detection_mode
+
 
 if __name__ == "__main__":
-    logger = Logger("LOGGER").get_logger()
-    mode = get_user_mode()
-    # TODO at the moment we don't use config file
-    # try:
-    #     with open("config.toml", "rb") as cfg_file:
-    #         cfg = tomllib.load(cfg_file)
-    # except FileNotFoundError:
-    #     logger.error("Could not find config.toml file!")
-    #     sys.exit(1)
+    if APP_DEBUG_MODE_ENABLED:
+        logger.info("APP DEBUG MODE IS ENABLED!")
+    docker_compose_path = "docker-compose.yml"
+    containers_start_parallel = os.getenv('CONTAINERS_START_PARALLEL') == "true"
+    dm = DockerManager()
 
-    create_app(logger, mode)
+    try:
+        if containers_start_parallel:
+            dm.run_docker_services(docker_compose_path)
+            dm.wait_for_mongo_container_start()
+
+        create_and_run_app()
+    except Exception as e:
+        logger.error(f"An unexpected error occurred! Error: {e}")
+    finally:
+        if containers_start_parallel:
+            dm.stop_docker_services(docker_compose_path)
