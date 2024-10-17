@@ -1,11 +1,14 @@
 import logging
 from PySide6.QtWidgets import QMainWindow, QStackedWidget, QVBoxLayout, QWidget
-from PySide6.QtGui import QPixmap, QImage
-from PySide6.QtCore import Slot, Qt
-
+from PySide6.QtGui import QPixmap, QImage, Qt
+from PySide6.QtCore import Slot, Qt, QTimer
+from camera.gesture_parser import GestureParser
 from engine import Engine
 from ui.widgets import WidgetsManager
 from utils import Utils
+from pynput.keyboard import Key, Controller
+
+keyboard = Controller()
 
 logger = logging.getLogger("app")
 
@@ -19,6 +22,8 @@ class MainApp(QMainWindow):
         self.setWindowTitle("GestaurantOrder")
         self.utils = Utils()
         self.engine = Engine(mode)
+        # Track last processed gesture
+        self.last_gesture = None
 
         # Default visibility settings for widgets
         self.camera_preview_visible = False
@@ -46,6 +51,10 @@ class MainApp(QMainWindow):
         self.engine.start()
         self.showFullScreen()
 
+        self.gesture_timer = QTimer(self)
+        self.gesture_timer.timeout.connect(self.check_gestures_from_json)
+        self.gesture_timer.start(1000)
+
 
     @Slot(QImage)
     def update_image(self, frame):
@@ -68,6 +77,38 @@ class MainApp(QMainWindow):
             self.toggle_camera_preview()
         elif event.key() == Qt.Key_2:
             self.toggle_test_widget_preview()
+
+    def check_gestures_from_json(self):
+        gesture = GestureParser().read_gesture_from_json()
+
+        if gesture is not None and gesture != self.last_gesture:
+            self.last_gesture = gesture
+            self.handle_gesture_action(gesture)
+
+    def handle_gesture_action(self, gesture):
+        if gesture == 1:
+            self.simulate_key_press(Qt.Key_Right)
+        elif gesture == 2:
+            self.simulate_key_press(Qt.Key_Left)
+        elif gesture == 'Open_Palm':
+            self.simulate_key_press(Qt.Key_Right)
+        elif gesture == 'Thumb_Down':
+            self.simulate_key_press(Qt.Key_Left)
+
+        ## TO DO
+        # elif gesture == 'Thumb_Up':
+        #     self.simulate_key_press(Qt.Key_Right)
+        # elif gesture == 'Pointing_Up':
+        #     self.simulate_key_press(Qt.Key_Right)
+
+    @staticmethod
+    def simulate_key_press(key):
+        if key == Qt.Key_Right:
+            keyboard.press(Key.right)
+            keyboard.release(Key.right)
+        elif key == Qt.Key_Left:
+            keyboard.press(Key.left)
+            keyboard.release(Key.left)
 
     def toggle_camera_preview(self):
         self.camera_preview_visible = not self.camera_preview_visible

@@ -1,14 +1,18 @@
+import json
+import time
 from abc import abstractmethod
 import cv2
 from cvzone import HandTrackingModule
 import mediapipe as mp
 import os
+from .gesture_parser import GestureParser
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtGui import QImage
 
 
 class UserCamera(QObject):
     frame_ready = Signal(QImage)
+    gesture_detected = Signal(str)
 
     def __init__(self, mode):
         """
@@ -25,6 +29,10 @@ class UserCamera(QObject):
 
         self.hand = HandTrackingModule.HandDetector()
         self.mode = mode
+        self.last_gesture = None
+        self.last_save_time = 0
+        self.save_interval = 1
+
 
         if self.mode == 'mediapipe':
             self.mp_hands = mp.solutions.hands.Hands(
@@ -58,7 +66,13 @@ class UserCamera(QObject):
                 elif ret and self.mode == 'mediapipe':
                     # Process gesture detection with MediaPipe
                     gestures = self.detect_gesture(frame)
-                    self.display_gestures(frame, gestures)
+                    gestures = self.display_gestures(frame, gestures)
+                #
+                current_time = time.time()
+                if gestures != self.last_gesture and current_time - self.last_save_time >= self.save_interval:
+                    self.emit_gesture_json(gestures)
+                    self.last_gesture = gestures
+                    self.last_save_time = current_time
 
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
 
@@ -77,6 +91,21 @@ class UserCamera(QObject):
     @abstractmethod
     def display_gestures(self, frame, gestures):
         pass
+
+    def emit_gesture_json(self, gestures):
+        """
+        Emit the detected gestures as a JSON.
+        """
+        if "all_fingers" in gestures:
+            gesture_data = {
+                "gestures": gestures["all_fingers"]
+            }
+        else:
+            gesture_data = { "gestures": gestures}
+        gesture_json = json.dumps(gesture_data)
+        self.gesture_detected.emit(gesture_json)
+
+        GestureParser().gesture_json_to_file(gesture_data, "gestures.json")
 
     def stop(self):
         self.running = False

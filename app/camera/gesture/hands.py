@@ -48,6 +48,8 @@ class GestureDetector(UserCamera):
                 cv2.putText(frame, f"Gesture: {gesture_name} ({score:.2f})",
                             (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0),
                             2, cv2.LINE_AA)
+                return gesture_name
         else:
             cv2.putText(frame, "No gesture detected", (10, 70), cv2.FONT_HERSHEY_SIMPLEX, 1,
                         (0, 0, 255), 2, cv2.LINE_AA)
+            return "None"
