@@ -1,4 +1,5 @@
 import json
+import logging
 import time
 from abc import abstractmethod
 import cv2
@@ -9,6 +10,7 @@ from .gesture_parser import GestureParser
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtGui import QImage
 
+logger = logging.getLogger("app")
 
 class UserCamera(QObject):
     frame_ready = Signal(QImage)
@@ -32,6 +34,7 @@ class UserCamera(QObject):
         self.last_gesture = None
         self.last_save_time = 0
         self.save_interval = 1
+        self.filename = os.getenv('CAMERA_FILENAME')
 
 
         if self.mode == 'mediapipe':
@@ -53,7 +56,7 @@ class UserCamera(QObject):
             if ret:
 
                 if not ret:
-                    print("Warning: Frame capture failed. Retrying...")
+                    logger.error("Frame capture failed. Retrying...")
                     continue
 
                 hands, frame = self.hand.findHands(frame)
@@ -105,7 +108,7 @@ class UserCamera(QObject):
         gesture_json = json.dumps(gesture_data)
         self.gesture_detected.emit(gesture_json)
 
-        GestureParser().gesture_json_to_file(gesture_data, "gestures.json")
+        GestureParser().gesture_json_to_file(gesture_data, self.filename)
 
     def stop(self):
         self.running = False

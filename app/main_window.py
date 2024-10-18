@@ -1,4 +1,5 @@
 import logging
+import os
 from PySide6.QtWidgets import QMainWindow, QStackedWidget, QVBoxLayout, QWidget
 from PySide6.QtGui import QPixmap, QImage, Qt
 from PySide6.QtCore import Slot, Qt, QTimer
@@ -51,6 +52,7 @@ class MainApp(QMainWindow):
         self.engine.start()
         self.showFullScreen()
 
+        self.filename = os.getenv('CAMERA_FILENAME')
         self.gesture_timer = QTimer(self)
         self.gesture_timer.timeout.connect(self.check_gestures_from_json)
         self.gesture_timer.start(1000)
@@ -79,7 +81,7 @@ class MainApp(QMainWindow):
             self.toggle_test_widget_preview()
 
     def check_gestures_from_json(self):
-        gesture = GestureParser().read_gesture_from_json()
+        gesture = GestureParser().read_gesture_from_json(self.filename)
 
         if gesture is not None and gesture != self.last_gesture:
             self.last_gesture = gesture

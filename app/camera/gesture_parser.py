@@ -30,11 +30,10 @@ class GestureParser:
             print(f"Error appending gestures to file: {e}")
 
     @staticmethod
-    def read_gesture_from_json():
+    def read_gesture_from_json(filename):
         """
         Read the last gesture from the JSON file.
         """
-        filename = "gestures.json"
         if os.path.exists(filename):
             try:
                 with open(filename, 'r') as json_file:
