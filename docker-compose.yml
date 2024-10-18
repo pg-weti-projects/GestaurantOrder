@@ -4,6 +4,9 @@ services:
   mongodb:
     image: mongo:7.0.2
     container_name: mongodb
+    environment:
+      MONGO_INITDB_ROOT_USERNAME: ${MONGO_LOGIN}
+      MONGO_INITDB_ROOT_PASSWORD: ${MONGO_PASSWORD}
     volumes:
       - ./database_data:/data/db
     ports:
