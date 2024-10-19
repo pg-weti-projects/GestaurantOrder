@@ -26,6 +26,8 @@ class FingersDetector(UserCamera):
             gestures['right_num_fingers'] = sum(right_fingers)
             gestures['right_is_open'] = all(right_fingers)
 
+            gestures['all_fingers'] = sum(left_fingers) + sum(right_fingers)
+
         # Handle case where only one hand is detected
         elif hands and len(hands) == 1:
             left = hands[0]
@@ -37,12 +39,15 @@ class FingersDetector(UserCamera):
             gestures['right_num_fingers'] = 0
             gestures['right_is_open'] = False
 
+            gestures['all_fingers'] = sum(left_fingers)
+
         # Handle case where no hands are detected
         else:
             gestures['left_num_fingers'] = 0
             gestures['left_is_open'] = False
             gestures['right_num_fingers'] = 0
             gestures['right_is_open'] = False
+            gestures['all_fingers'] = 0
 
         return gestures
 
