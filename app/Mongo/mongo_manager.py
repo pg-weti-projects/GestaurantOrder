@@ -29,3 +29,24 @@ class MongoManager:
             return True
         except ServerSelectionTimeoutError as e:
             return False
+
+    def add_user_record(self, row_data: dict) -> None:
+        """
+            Add a new row of admin input data.
+        """
+        self.order_collection.insert_one(row_data)
+
+    def update_record(self, row_data: dict):
+        """
+            Update user-entered data.
+        """
+        update_data = row_data.copy()
+        del update_data["_id"]
+
+        return self.order_collection.update_one({'_id': row_data['_id']}, {'$set': update_data})
+
+    def delete_record_from_db(self, _id):
+        """
+            Delete order from database.
+        """
+        return self.order_collection.delete_one({'_id': _id})
