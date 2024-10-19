@@ -1,11 +1,12 @@
 import logging
 import os
-from PySide6.QtWidgets import QMainWindow, QStackedWidget, QVBoxLayout, QWidget
-from PySide6.QtGui import QPixmap, QImage, Qt
 from PySide6.QtCore import Slot, Qt, QTimer
+from PySide6.QtWidgets import QMainWindow, QStackedWidget, QVBoxLayout, QWidget
+from PySide6.QtGui import QPixmap, QImage
+
 from camera.gesture_parser import GestureParser
 from engine import Engine
-from ui.widgets import WidgetsManager
+from ui.widgets_manager import WidgetsManager
 from utils import Utils
 from pynput.keyboard import Key, Controller
 
@@ -33,15 +34,29 @@ class MainApp(QMainWindow):
 
         # Define additional help widgets
         self.widgets = WidgetsManager(self.utils.get_monitor_geometry(), self)
-        self.helper_widget = self.widgets.create_helper_widget(self.helper_widget_preview_visible)
-        self.camera_widget, self.camera_label = self.widgets.create_camera_preview_label(self.camera_preview_visible)
 
-        # Stacked widget for 'main' widgets that shouldn't be displayed at the same time
+        # Define main views ( widgets managed by QStackedWidget ) - only one of them can be displayed at a time
+        self.default_visible_main_widget_name = "main_view_widget"
+        self.main_widgets = {
+            "main_view_widget": self.widgets.create_main_widget(default_visibility=False),
+            "test_widget": self.widgets.create_test_widget(default_visibility=False),
+            "admin_panel": self.widgets.create_admin_panel_widget(default_visibility=False)
+        }
         self.stacked_widget = QStackedWidget(self)
-        self.test_widget = self.widgets.create_test_widget(self.test_widget_preview_visible)
-        self.stacked_widget.addWidget(self.test_widget)
+        for widget in self.main_widgets.values():
+            self.stacked_widget.addWidget(widget)
 
-        # Set up main layout with main widget
+        self.stacked_widget.setCurrentWidget(self.main_widgets[self.default_visible_main_widget_name])
+
+        # Default visibility settings for additional widgets ( which do not belong to stacked widgets )
+        self.camera_default_visible = False
+        self.helper_widget_default_visible = False
+
+        # Define additional widgets
+        self.helper_widget = self.widgets.create_helper_widget(default_visibility=False)
+        self.camera_widget, self.camera_label = self.widgets.create_camera_preview_label(default_visibility=False)
+
+        # Set up main layout and widget for other widgets
         layout = QVBoxLayout()
         layout.addWidget(self.stacked_widget)
         main_widget = QWidget(self)
@@ -73,12 +88,20 @@ class MainApp(QMainWindow):
         """
         if event.key() == Qt.Key_Escape:
             self.close()
+        elif event.key() == Qt.Key_1:
+            self.toggle_main_widgets(self.main_widgets['main_view_widget'])
+        elif event.key() == Qt.Key_2:
+            self.toggle_main_widgets(self.main_widgets['test_widget'])
+        elif event.key() == Qt.Key_3:
+            self.toggle_main_widgets(self.main_widgets['admin_panel'])
         elif event.key() == Qt.Key_H:
             self.toggle_help_window_preview()
-        elif event.key() == Qt.Key_1:
+        elif event.key() == Qt.Key_9:
             self.toggle_camera_preview()
-        elif event.key() == Qt.Key_2:
-            self.toggle_test_widget_preview()
+
+    def toggle_main_widgets(self, actual_widget: QWidget) -> None:
+        if self.stacked_widget.currentWidget() != actual_widget:
+            self.stacked_widget.setCurrentWidget(actual_widget)
 
     def check_gestures_from_json(self):
         gesture = GestureParser().read_gesture_from_json(self.filename)
@@ -113,20 +136,16 @@ class MainApp(QMainWindow):
             keyboard.release(Key.left)
 
     def toggle_camera_preview(self):
-        self.camera_preview_visible = not self.camera_preview_visible
-        if self.camera_preview_visible:
+        self.camera_default_visible = not self.camera_default_visible
+        if self.camera_default_visible:
             self.camera_widget.raise_()  # sets the camera label at the top of all widgets
-        self.camera_widget.setVisible(self.camera_preview_visible)
+        self.camera_widget.setVisible(self.camera_default_visible)
 
     def toggle_help_window_preview(self):
-        self.helper_widget_preview_visible = not self.helper_widget_preview_visible
-        if self.helper_widget_preview_visible:
+        self.helper_widget_default_visible = not self.helper_widget_default_visible
+        if self.helper_widget_default_visible:
             self.helper_widget.raise_()  # sets the helper widget at the top of all widgets
-        self.helper_widget.setVisible(self.helper_widget_preview_visible)
-
-    def toggle_test_widget_preview(self):
-        self.test_widget_preview_visible = not self.test_widget_preview_visible
-        self.test_widget.setVisible(self.test_widget_preview_visible)
+        self.helper_widget.setVisible(self.helper_widget_default_visible)
 
     def closeEvent(self, event):
         self.engine.stop()

@@ -1,9 +1,16 @@
-from PySide6.QtWidgets import QLabel, QWidget, QSizePolicy, QVBoxLayout, QHBoxLayout, QPushButton, QMessageBox
 from PySide6.QtCore import Qt
+from PySide6.QtWidgets import (QMainWindow, QLabel, QWidget, QSizePolicy, QVBoxLayout, QHBoxLayout, QPushButton,
+                               QMessageBox)
+
+from .admin_panel_widget import AdminPanel
+from .main_widget import MainWidget
 
 
 class WidgetsManager:
-    def __init__(self, monitor_geometry: dict, main_window):
+    """
+    Class to define additional widgets that are not supported by QStackedWidget ( except temporary test widget ).
+    """
+    def __init__(self, monitor_geometry: dict, main_window: QMainWindow):
         self._main_window = main_window
         self._m_width = monitor_geometry['width']
         self._m_height = monitor_geometry['height']
@@ -30,8 +37,10 @@ class WidgetsManager:
         helper_widget.setStyleSheet("background-color: grey;")
 
         label_text = """Available functions:\n
-        \t1 - Show/Hide camera preview\n
-        \t2 - Show/Hide test widget preview\n
+        \t1 - Show/Hide main window\n
+        \t2 - Show/Hide test widget\n
+        \t3 - Show/Hide admin panel\n
+        \t9 - Show/Hide camera preview\n
         \tH - Show help window\n
         \tESC - Exit application
         """
@@ -121,3 +130,29 @@ class WidgetsManager:
     def _show_button_message(self, btn_label: str) -> None:
         """Shows a message box when a button is clicked."""
         QMessageBox.information(self._main_window, "Button Clicked", f"CLICKED {btn_label}!")
+
+    def create_admin_panel_widget(self, default_visibility: bool) -> QWidget:
+        """
+        Creates widget for testing algorithms and app with 3 clickable squares at the horizontal center of app.
+
+        Args:
+            default_visibility: Sets the default setting of the widget visibility.
+
+        Returns: Admin panel widget object
+        """
+        admin_panel_widget = AdminPanel(self._main_window)
+        admin_panel_widget.setVisible(default_visibility)
+        return admin_panel_widget
+
+    def create_main_widget(self, default_visibility: bool) -> QWidget:
+        """
+        Creates widget for with main view.
+
+        Args:
+            default_visibility: Sets the default setting of the widget visibility.
+
+        Returns: Main view widget object
+        """
+        main_widget = MainWidget(self._main_window)
+        main_widget.setVisible(default_visibility)
+        return main_widget
