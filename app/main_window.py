@@ -1,13 +1,10 @@
 import logging
 import os
-from PySide6.QtWidgets import QMainWindow, QStackedWidget, QVBoxLayout, QWidget
-from PySide6.QtGui import QPixmap, QImage, Qt
 from PySide6.QtCore import Slot, Qt, QTimer
-from camera.gesture_parser import GestureParser
-from PySide6.QtWidgets import QMainWindow, QStackedWidget, QVBoxLayout, QWidget, QLabel
+from PySide6.QtWidgets import QMainWindow, QStackedWidget, QVBoxLayout, QWidget
 from PySide6.QtGui import QPixmap, QImage
-from PySide6.QtCore import Slot, Qt
 
+from camera.gesture_parser import GestureParser
 from engine import Engine
 from ui.widgets_manager import WidgetsManager
 from utils import Utils
