@@ -30,6 +30,10 @@ class MongoManager:
         except ServerSelectionTimeoutError as e:
             return False
 
+
+    def get_order_list(self):
+        return list(self.order_collection.find({}))
+
     def add_user_record(self, row_data: dict) -> None:
         """
             Add a new row of admin input data.
