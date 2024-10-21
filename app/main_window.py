@@ -98,6 +98,12 @@ class MainApp(QMainWindow):
             self.toggle_help_window_preview()
         elif event.key() == Qt.Key_9:
             self.toggle_camera_preview()
+        elif event.key() == Qt.Key_D:
+            if self.stacked_widget.currentWidget() == self.main_widgets['main_view_widget']:
+                self.main_widgets['main_view_widget'].show_next_items()
+        elif event.key() == Qt.Key_A:
+            if self.stacked_widget.currentWidget() == self.main_widgets['main_view_widget']:
+                self.main_widgets['main_view_widget'].show_previous_items()
 
     def toggle_main_widgets(self, actual_widget: QWidget) -> None:
         if self.stacked_widget.currentWidget() != actual_widget:
