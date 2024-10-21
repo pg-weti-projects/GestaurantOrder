@@ -94,9 +94,9 @@ class WidgetsManager:
         layout = QVBoxLayout(test_widget)
         row_layout = QHBoxLayout()
 
-        button_labels = {"CARBONARA": "resources/img/carbonara.png",
-                         "PIZZA": "resources/img/pizza.png",
-                         "RAMEN": "resources/img/ramen.png"}
+        button_labels = {"CARBONARA": "resources/img/dish_img/carbonara.png",
+                         "PIZZA": "resources/img/dish_img/pizza.png",
+                         "RAMEN": "resources/img/dish_img/ramen.png"}
 
         for btn_label, img_path in button_labels.items():
             button = QPushButton("", test_widget)

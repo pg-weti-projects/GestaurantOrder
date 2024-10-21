@@ -14,9 +14,17 @@ python app/app.py
 ```
 
 ## AVAILABLE OPTIONS
-    1 - Toggle visibility of camera preview
+    1 - Toggle main app preview
 
     2 - Toggle test widget preview
+
+    3 - Toggle Admin Panel preview
+
+    9 - Toggle camera preview
+
+    A - Move carousel left ( Available only in main window widget )
+
+    D - Move carousel right ( Available only in main window widget )
 
     H - Toggle help window
 
