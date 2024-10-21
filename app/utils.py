@@ -5,13 +5,12 @@ import sys
 
 from Mongo.mongo_manager import MongoManager
 
+logger = logging.getLogger("app")
+
 class Utils:
     """
     Class for all other functions that cannot be classified.
     """
-    def __init__(self):
-        self._logger = logging.getLogger("app")
-
     def get_monitor_geometry(self) -> dict:
         """
         Gets primary monitor geometry ( width and height )
@@ -22,7 +21,7 @@ class Utils:
         monitor = QGuiApplication.primaryScreen().geometry()
         m_width = monitor.width()
         m_height = monitor.height()
-        self._logger.info(f"Size of your primary monitor: {m_width}x{m_height}")
+        logger.info(f"Size of your primary monitor: {m_width}x{m_height}")
 
         return {"width": m_width, "height": m_height}
 
