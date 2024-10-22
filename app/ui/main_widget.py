@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout
 from PySide6.QtGui import QPixmap, QPalette, QBrush
 
 from .ui_utils import Card
+from Mongo.mongo_manager import MongoManager
 
 logger = logging.getLogger("app")
 
@@ -14,6 +15,7 @@ class MainWidget(QWidget):
     """
     def __init__(self, parent: QMainWindow):
         super().__init__(parent)
+        self.dish_data = None
         self.parent = parent
 
         self.background_image_path = 'resources/img/main_window_background.png'
@@ -26,14 +28,7 @@ class MainWidget(QWidget):
         self.current_index = 0
 
         # Here we need to add dish data downloaded from Mongo
-        self.dish_data = [
-            {"img_path": "resources/img/dish_img/burger.png", "price": "40 zł", "name": "Burger"},
-            {"img_path": "resources/img/dish_img/carbonara.png", "price": "26 zł", "name": "Carbonara"},
-            {"img_path": "resources/img/dish_img/kebab.png", "price": "33 zł", "name": "Kebab"},
-            {"img_path": "resources/img/dish_img/ramen.png", "price": "25 zł", "name": "Ramen"},
-            {"img_path": "resources/img/dish_img/sandwich.png", "price": "58 zł", "name": "Sandwich"},
-            {"img_path": "resources/img/dish_img/pizza.png", "price": "21 zł", "name": "Pizza"}
-        ]
+        self.load_dishes_from_db()
 
         self.carousel_layout = QHBoxLayout()
 
@@ -47,6 +42,20 @@ class MainWidget(QWidget):
         layout.addWidget(self.carousel_widget)
 
         self.setLayout(layout)
+
+    def load_dishes_from_db(self):
+        """Loads dish data from the MongoDB."""
+        mongo_manager = MongoManager()
+        dishes = mongo_manager.get_order_list()
+
+        self.dish_data = [{
+                "img_path": dish['image_path'],
+                "price": f"{dish['price']} zł",
+                "name": dish['name']
+            }
+            for dish in dishes
+        ]
+        return self.dish_data
 
     def resizeEvent(self, event):
         """resizeEvent method override to adjust background image to new app sizze"""
