@@ -1,6 +1,6 @@
 import logging
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel
 from PySide6.QtGui import QPixmap, QPalette, QBrush
 
 from .ui_utils import Card
@@ -20,10 +20,22 @@ class MainWidget(QWidget):
         self.set_background(self.background_image_path)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
 
-        self.num_visible_items = 5
-        self.current_index = 0
+        top_row = QLabel("Górny wiersz", self)
+        top_row.setStyleSheet("background-color: lightgray;")
+        top_row.setAlignment(Qt.AlignCenter)
+        layout.addWidget(top_row, 1)
+
+        # MIDDLE ROW
+        self.middle_row = QWidget(self)
+        self.middle_row_layout = QHBoxLayout(self.middle_row)
+        layout.addWidget(self.middle_row, 3)
+
+        bottom_row = QLabel("Dolny wiersz", self)
+        bottom_row.setStyleSheet("background-color: lightgray;")
+        bottom_row.setAlignment(Qt.AlignCenter)
+        layout.addWidget(bottom_row, 1)
+
 
         # Here we need to add dish data downloaded from Mongo
         self.dish_data = [
@@ -35,18 +47,12 @@ class MainWidget(QWidget):
             {"img_path": "resources/img/dish_img/pizza.png", "price": "21 zł", "name": "Pizza"}
         ]
 
-        self.carousel_layout = QHBoxLayout()
+        self.num_visible_items = 5
+        self.current_index = 0
+        self.main_card = None
+        self.cards_number = len(self.dish_data)
 
-        for i in range(self.num_visible_items):
-            dish_card = Card(self.dish_data[i], i == self.num_visible_items // 2)
-            self.carousel_layout.addWidget(dish_card)
-
-        self.carousel_widget = QWidget()
-        self.carousel_widget.setLayout(self.carousel_layout)
-
-        layout.addWidget(self.carousel_widget)
-
-        self.setLayout(layout)
+        self.update_carousel()
 
     def resizeEvent(self, event):
         """resizeEvent method override to adjust background image to new app sizze"""
@@ -81,13 +87,28 @@ class MainWidget(QWidget):
         """
         Removes the Card objects currently visible on the screen and then generates additional cards to be displayed.
         """
-        for i in reversed(range(self.carousel_layout.count())):
-            widget_to_remove = self.carousel_layout.itemAt(i).widget()
-            self.carousel_layout.removeWidget(widget_to_remove)
+        for i in reversed(range(self.middle_row_layout.count())):
+            widget_to_remove = self.middle_row_layout.itemAt(i).widget()
+            self.middle_row_layout.removeWidget(widget_to_remove)
             widget_to_remove.setParent(None)
 
-        for i in range(self.num_visible_items):
-            current_card_index = (self.current_index + i) % len(self.dish_data)
-            is_center = (i == self.num_visible_items // 2)
+        if self.cards_number == 1:
+            num_visible = 1
+            center_index = 0
+        elif self.cards_number <= 3:
+            num_visible = 3
+            center_index = 1
+        else:
+            num_visible = 5
+            center_index = 2
+
+        for i in range(num_visible):
+            current_card_index = (self.current_index + i - center_index) % self.cards_number
+            is_center = (i == center_index)
             dish_card = Card(self.dish_data[current_card_index], is_center)
-            self.carousel_layout.addWidget(dish_card)
+            self.middle_row_layout.addWidget(dish_card)
+
+            if is_center:
+                self.main_card = dish_card
+
+        print(self.main_card.dish_data['name'])
