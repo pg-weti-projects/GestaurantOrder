@@ -1,4 +1,6 @@
 import logging
+
+from bson import ObjectId
 from pymongo import MongoClient
 from pymongo.errors import ServerSelectionTimeoutError
 
@@ -34,23 +36,30 @@ class MongoManager:
     def get_order_list(self):
         return list(self.order_collection.find({}))
 
-    def add_user_record(self, row_data: dict) -> None:
+    def add_user_record(self, row_data):
         """
             Add a new row of admin input data.
         """
-        self.order_collection.insert_one(row_data)
+        if "_id" in row_data:
+            del row_data["_id"]
+        return self.order_collection.insert_one(row_data).inserted_id
 
     def update_record(self, row_data: dict):
         """
             Update user-entered data.
         """
-        update_data = row_data.copy()
-        del update_data["_id"]
+        object_id = ObjectId(row_data['_id'])
+        update_data = {key: value for key, value in row_data.items() if key != "_id"}
+        return self.order_collection.update_one({'_id': object_id}, {'$set': update_data})
 
-        return self.order_collection.update_one({'_id': row_data['_id']}, {'$set': update_data})
-
-    def delete_record_from_db(self, _id):
+    def delete_record_from_db(self, dish_id):
         """
             Delete order from database.
         """
-        return self.order_collection.delete_one({'_id': _id})
+        try:
+            object_id = ObjectId(dish_id)
+            result = self.order_collection.delete_one({"_id": object_id})
+            return result.deleted_count > 0
+        except Exception as e:
+            logger.error(f"Error occurred while deleting record: {e}")
+            return False

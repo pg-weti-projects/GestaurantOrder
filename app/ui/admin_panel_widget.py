@@ -5,6 +5,7 @@ from PySide6.QtCore import Qt
 from PySide6.QtGui import QPixmap, QFont
 from PySide6.QtWidgets import (QMainWindow, QWidget, QPushButton, QVBoxLayout, QTableWidget, QTableWidgetItem, QLabel,
                                QFileDialog, QApplication, QHBoxLayout)
+from bson import ObjectId
 
 logger = logging.getLogger("app")
 
@@ -18,6 +19,7 @@ class AdminPanel(QWidget):
         # Database
         self.mongo_manager = MongoManager()
 
+        self.image_paths = {}
         # Monitor geometry
         monitor = QApplication.primaryScreen().geometry()
         m_width = monitor.width()
@@ -134,8 +136,13 @@ class AdminPanel(QWidget):
         if current_row != -1:
             dish_id = self.dish_table.item(current_row, 0).text()
             if dish_id:
-                self.mongo_manager.delete_record_from_db(dish_id)
-            self.dish_table.removeRow(current_row)
+                success = self.mongo_manager.delete_record_from_db(dish_id)
+                if success:
+                    self.dish_table.removeRow(current_row)
+                    logger.info(f"Successfully deleted dish with ID: {dish_id}")
+                else:
+                    logger.error(f"Failed to delete dish with ID: {dish_id} from database.")
+
 
     def edit_dish(self, item):
         """
@@ -151,16 +158,20 @@ class AdminPanel(QWidget):
             price = float(price_item.text()) if price_item and price_item.text() else 0.0
 
             if not dish_id:
-                new_dish = {"_id": dish_id, "name": name, "price": price, "image_path": ""}
+                new_dish = {"name": name, "price": price, "image_path": ""}
                 new_dish_id = self.mongo_manager.add_user_record(new_dish)
                 self.dish_table.setItem(row, 0, QTableWidgetItem(str(new_dish_id)))
             else:
-                updated_dish = {"_id": dish_id,"name": name, "price": price}
-                image_widget = self.dish_table.cellWidget(row, 3)
-                if isinstance(image_widget, QLabel):
-                    pixmap = image_widget.pixmap()
-                    if pixmap:
-                        updated_dish['image_path'] = self.get_image_path_from_label(image_widget)
+                updated_dish = {"_id": ObjectId(dish_id), "name": name, "price": price}
+
+                if dish_id in self.image_paths:
+                    updated_dish['image_path'] = self.image_paths[dish_id]
+                else:
+                    image_widget = self.dish_table.cellWidget(row, 3)
+                    if isinstance(image_widget, QLabel):
+                        pixmap = image_widget.pixmap()
+                        if pixmap:
+                            updated_dish['image_path'] = self.get_image_path_from_label(image_widget)
 
                 self.mongo_manager.update_record(updated_dish)
 
@@ -188,10 +199,13 @@ class AdminPanel(QWidget):
             name = self.dish_table.item(row, 1).text()
             price = float(self.dish_table.item(row, 2).text())
 
+            if dish_id:
+                self.image_paths[dish_id] = image_path
+
             if not dish_id:
                 new_dish = {"name": name, "price": price, "image_path": image_path}
                 new_dish_id = self.mongo_manager.add_user_record(new_dish)
                 self.dish_table.setItem(row, 0, QTableWidgetItem(str(new_dish_id)))
             else:
-                updated_dish = {dish_id:"_id","name": name, "price": price, "image_path": image_path}
+                updated_dish = {"_id": ObjectId(dish_id), "name": name, "price": price, "image_path": image_path}
                 self.mongo_manager.update_record(updated_dish)
