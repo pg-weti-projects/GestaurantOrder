@@ -27,7 +27,7 @@ class MainApp(QMainWindow):
         # Track last processed gesture
         self.last_gesture = None
 
-        # Default visibility settings for widgets
+        # Default visibility settings for additional widgets
         self.camera_preview_visible = False
         self.helper_widget_preview_visible = False
         self.test_widget_preview_visible = True
@@ -59,6 +59,7 @@ class MainApp(QMainWindow):
         # Set up main layout and widget for other widgets
         layout = QVBoxLayout()
         layout.addWidget(self.stacked_widget)
+        layout.setContentsMargins(0,0,0,0)
         main_widget = QWidget(self)
         main_widget.setLayout(layout)
         self.setCentralWidget(main_widget)
