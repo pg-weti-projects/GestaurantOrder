@@ -1,4 +1,5 @@
 import logging
+import os
 
 from bson import ObjectId
 from pymongo import MongoClient
@@ -10,7 +11,9 @@ logger = logging.getLogger("app")
 class MongoManager:
 
     def __init__(self):
-        self.url = "mongodb://localhost:27017"
+        username = os.getenv("MONGO_LOGIN")
+        password = os.getenv("MONGO_PASSWORD")
+        self.url = f"mongodb://{username}:{password}@localhost:27017"
         try:
             self.client = MongoClient(self.url)
             self.db = self.client['menu_database']
