@@ -1,6 +1,6 @@
 import logging
 import os
-from PySide6.QtCore import Slot, Qt, QTimer
+from PySide6.QtCore import Slot, Qt, QTimer, Signal
 from PySide6.QtWidgets import QMainWindow, QStackedWidget, QVBoxLayout, QWidget
 from PySide6.QtGui import QPixmap, QImage
 
@@ -19,6 +19,7 @@ class MainApp(QMainWindow):
     """
     Main window class for the GUI
     """
+    gesture_detected = Signal(str)
     def __init__(self, mode):
         super().__init__()
         self.setWindowTitle("GestaurantOrder")
@@ -69,9 +70,21 @@ class MainApp(QMainWindow):
         self.showFullScreen()
 
         self.filename = os.getenv('CAMERA_FILENAME')
-        self.gesture_timer = QTimer(self)
-        self.gesture_timer.timeout.connect(self.check_gestures_from_json)
-        self.gesture_timer.start(1000)
+        # self.gesture_timer = QTimer(self)
+        # self.gesture_timer.timeout.connect(self.check_gestures_from_json)
+        # self.gesture_timer.start(1000)
+        self.engine.gesture_detected.connect(self.handle_gesture)
+
+    @Slot(str)
+    def handle_gesture(self, gesture: str) -> None:
+        """
+        Handle gesture operation. Sets last gesture and emits detected gesture detection further
+        Args:
+            gesture: Detected gesture name.
+        """
+        self.last_gesture = gesture
+        self.gesture_detected.emit(gesture)
+        logger.debug(f"MainApp gesture {gesture} set.")
 
 
     @Slot(QImage)

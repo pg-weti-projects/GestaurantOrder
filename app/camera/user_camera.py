@@ -73,8 +73,9 @@ class UserCamera(QObject):
                 #
                 current_time = time.time()
                 if gestures != self.last_gesture and current_time - self.last_save_time >= self.save_interval:
-                    self.emit_gesture_json(gestures)
+                    # self.emit_gesture_json(gestures)
                     self.last_gesture = gestures
+                    self.gesture_detected.emit(self.last_gesture)
                     self.last_save_time = current_time
 
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -115,4 +116,3 @@ class UserCamera(QObject):
 
     def __del__(self):
         self.cap.release()
-
