@@ -23,6 +23,7 @@ class MainApp(QMainWindow):
     def __init__(self, mode):
         super().__init__()
         self.setWindowTitle("GestaurantOrder")
+        self.current_mode = mode
         self.utils = Utils()
         self.engine = Engine(mode)
         # Track last processed gesture
@@ -118,10 +119,27 @@ class MainApp(QMainWindow):
         elif event.key() == Qt.Key_A:
             if self.stacked_widget.currentWidget() == self.main_widgets['main_view_widget']:
                 self.main_widgets['main_view_widget'].show_previous_items()
+        elif event.key() == Qt.Key_X:
+            self.change_mode('mediapipe')
+        elif event.key() == Qt.Key_Z:
+            self.change_mode('fingers')
 
     def toggle_main_widgets(self, actual_widget: QWidget) -> None:
         if self.stacked_widget.currentWidget() != actual_widget:
             self.stacked_widget.setCurrentWidget(actual_widget)
+
+    def change_mode(self, new_mode: str):
+        """
+        Change the mode (fingers/mediapipe) and restart the engine.
+        """
+        if self.current_mode != new_mode:
+            logger.info(f"Changing mode to {new_mode}")
+            self.engine.stop()
+            self.current_mode = new_mode
+            self.engine = Engine(self.current_mode)
+            self.engine.frame_ready.connect(self.update_image)
+            self.engine.gesture_detected.connect(self.handle_gesture)
+            self.engine.start()
 
     def check_gestures_from_json(self):
         gesture = GestureParser().read_gesture_from_json(self.filename)
