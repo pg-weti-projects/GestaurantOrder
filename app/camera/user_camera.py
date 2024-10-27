@@ -59,10 +59,9 @@ class UserCamera(QObject):
                     logger.error("Frame capture failed. Retrying...")
                     continue
 
-                hands, frame = self.hand.findHands(frame)
-
                 if ret and self.mode == 'fingers':
                     # Process finger detection
+                    hands, frame = self.hand.findHands(frame)
                     gestures = self.detect_gesture(hands)
                     self.display_gestures(frame, gestures)
 
