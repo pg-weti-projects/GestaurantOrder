@@ -2,6 +2,7 @@ from dotenv import load_dotenv
 import logging
 import os
 from PySide6.QtWidgets import QApplication
+import subprocess
 import sys
 
 from main_window import MainApp
@@ -47,8 +48,8 @@ if __name__ == "__main__":
             dm.wait_for_mongo_container_start()
 
         create_and_run_app()
-    except Exception as e:
-        logger.error(f"An unexpected error occurred! Error: {e}")
+    except subprocess.CalledProcessError as e:
+        logger.exception(f"Docker subprocess error: {e}")
     finally:
         if containers_start_parallel:
             dm.stop_docker_services(docker_compose_path)

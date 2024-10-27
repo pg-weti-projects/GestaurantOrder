@@ -54,11 +54,6 @@ class UserCamera(QObject):
         while self.running:
             ret, frame = self.cap.read()
             if ret:
-
-                if not ret:
-                    logger.error("Frame capture failed. Retrying...")
-                    continue
-
                 hands, frame = self.hand.findHands(frame)
 
                 if ret and self.mode == 'fingers':
@@ -70,11 +65,11 @@ class UserCamera(QObject):
                     # Process gesture detection with MediaPipe
                     gestures = self.detect_gesture(frame)
                     gestures = self.display_gestures(frame, gestures)
-                #
+
                 current_time = time.time()
                 if gestures != self.last_gesture and current_time - self.last_save_time >= self.save_interval:
-                    self.emit_gesture_json(gestures)
                     self.last_gesture = gestures
+                    self.gesture_detected.emit(self.last_gesture)
                     self.last_save_time = current_time
 
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
@@ -95,24 +90,8 @@ class UserCamera(QObject):
     def display_gestures(self, frame, gestures):
         pass
 
-    def emit_gesture_json(self, gestures):
-        """
-        Emit the detected gestures as a JSON.
-        """
-        if "all_fingers" in gestures:
-            gesture_data = {
-                "gestures": gestures["all_fingers"]
-            }
-        else:
-            gesture_data = { "gestures": gestures}
-        gesture_json = json.dumps(gesture_data)
-        self.gesture_detected.emit(gesture_json)
-
-        GestureParser().gesture_json_to_file(gesture_data, self.filename)
-
     def stop(self):
         self.running = False
 
     def __del__(self):
         self.cap.release()
-

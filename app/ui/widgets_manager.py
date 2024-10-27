@@ -12,6 +12,7 @@ class WidgetsManager:
     """
     def __init__(self, monitor_geometry: dict, main_window: QMainWindow):
         self._main_window = main_window
+        self.monitor_geometry = monitor_geometry
         self._m_width = monitor_geometry['width']
         self._m_height = monitor_geometry['height']
         self._m_center_width = monitor_geometry['width'] / 2
@@ -153,6 +154,6 @@ class WidgetsManager:
 
         Returns: Main view widget object
         """
-        main_widget = MainWidget(self._main_window)
+        main_widget = MainWidget(self._main_window, self.monitor_geometry)
         main_widget.setVisible(default_visibility)
         return main_widget

@@ -1,14 +1,12 @@
 import logging
-import os
-from PySide6.QtCore import Slot, Qt, QTimer
+from pynput.keyboard import Controller
+from PySide6.QtCore import Slot, Qt, Signal
 from PySide6.QtWidgets import QMainWindow, QStackedWidget, QVBoxLayout, QWidget
 from PySide6.QtGui import QPixmap, QImage
 
-from camera.gesture_parser import GestureParser
 from engine import Engine
 from ui.widgets_manager import WidgetsManager
 from utils import Utils
-from pynput.keyboard import Key, Controller
 
 keyboard = Controller()
 
@@ -17,8 +15,10 @@ logger = logging.getLogger("app")
 
 class MainApp(QMainWindow):
     """
-    Main window class for the GUI
+    Class for the main app window.
     """
+    gesture_detected = Signal(str)
+
     def __init__(self, mode):
         super().__init__()
         self.setWindowTitle("GestaurantOrder")
@@ -26,11 +26,6 @@ class MainApp(QMainWindow):
         self.engine = Engine(mode)
         # Track last processed gesture
         self.last_gesture = None
-
-        # Default visibility settings for additional widgets
-        self.camera_preview_visible = False
-        self.helper_widget_preview_visible = False
-        self.test_widget_preview_visible = True
 
         # Define additional help widgets
         self.widgets = WidgetsManager(self.utils.get_monitor_geometry(), self)
@@ -49,8 +44,8 @@ class MainApp(QMainWindow):
         self.stacked_widget.setCurrentWidget(self.main_widgets[self.default_visible_main_widget_name])
 
         # Default visibility settings for additional widgets ( which do not belong to stacked widgets )
-        self.camera_default_visible = False
-        self.helper_widget_default_visible = False
+        self.camera_visible = False
+        self.helper_widget_visible = False
 
         # Define additional widgets
         self.helper_widget = self.widgets.create_helper_widget(default_visibility=False)
@@ -68,17 +63,27 @@ class MainApp(QMainWindow):
         self.engine.start()
         self.showFullScreen()
 
-        self.filename = os.getenv('CAMERA_FILENAME')
-        self.gesture_timer = QTimer(self)
-        self.gesture_timer.timeout.connect(self.check_gestures_from_json)
-        self.gesture_timer.start(1000)
+        self.engine.gesture_detected.connect(self.handle_gesture)
+        self.gesture_detected.connect(self.main_widgets['main_view_widget'].handle_gesture)
 
+        # self.main_widgets['main_view_widget'].create_summary_widget() # TODO REMOVE AFTER TESTING - SUMAMRY WIDGET WORKS WHEN WE CREATE IT AFTER EVERYTHING!
 
     @Slot(QImage)
     def update_image(self, frame):
         pixmap = QPixmap.fromImage(frame)
         self.camera_label.setPixmap(pixmap)
         self.camera_label.setScaledContents(True)
+
+    @Slot(str)
+    def handle_gesture(self, gesture: str) -> None:
+        """
+        Handle gesture operation. Sets last gesture and emits detected gesture detection further
+        Args:
+            gesture: Detected gesture name.
+        """
+        self.last_gesture = gesture
+        self.gesture_detected.emit(gesture)
+        logger.debug(f"MainApp gesture {gesture} set.")
 
     def keyPressEvent(self, event) -> None:
         """
@@ -106,53 +111,32 @@ class MainApp(QMainWindow):
             if self.stacked_widget.currentWidget() == self.main_widgets['main_view_widget']:
                 self.main_widgets['main_view_widget'].show_previous_items()
 
+        # TODO REMOVE IT - JUST FOR TESTING
+        elif event.key() == Qt.Key_F:
+            if self.stacked_widget.currentWidget() == self.main_widgets['main_view_widget']:
+                self.main_widgets['main_view_widget'].select_dish()
+        elif event.key() == Qt.Key_G:
+            if self.stacked_widget.currentWidget() == self.main_widgets['main_view_widget']:
+                self.main_widgets['main_view_widget'].close_ordering_widget()
+        elif event.key() == Qt.Key_J:
+            if self.stacked_widget.currentWidget() == self.main_widgets['main_view_widget']:
+                self.main_widgets['main_view_widget'].set_dish_number_in_ordering_widget(6)
+
     def toggle_main_widgets(self, actual_widget: QWidget) -> None:
         if self.stacked_widget.currentWidget() != actual_widget:
             self.stacked_widget.setCurrentWidget(actual_widget)
 
-    def check_gestures_from_json(self):
-        gesture = GestureParser().read_gesture_from_json(self.filename)
-
-        if gesture is not None and gesture != self.last_gesture:
-            self.last_gesture = gesture
-            self.handle_gesture_action(gesture)
-
-    def handle_gesture_action(self, gesture):
-        if gesture == 1:
-            self.simulate_key_press(Qt.Key_Right)
-        elif gesture == 2:
-            self.simulate_key_press(Qt.Key_Left)
-        elif gesture == 'Open_Palm':
-            self.simulate_key_press(Qt.Key_Right)
-        elif gesture == 'Thumb_Down':
-            self.simulate_key_press(Qt.Key_Left)
-
-        ## TO DO
-        # elif gesture == 'Thumb_Up':
-        #     self.simulate_key_press(Qt.Key_Right)
-        # elif gesture == 'Pointing_Up':
-        #     self.simulate_key_press(Qt.Key_Right)
-
-    @staticmethod
-    def simulate_key_press(key):
-        if key == Qt.Key_Right:
-            keyboard.press(Key.right)
-            keyboard.release(Key.right)
-        elif key == Qt.Key_Left:
-            keyboard.press(Key.left)
-            keyboard.release(Key.left)
-
     def toggle_camera_preview(self):
-        self.camera_default_visible = not self.camera_default_visible
-        if self.camera_default_visible:
+        self.camera_visible = not self.camera_visible
+        if self.camera_visible:
             self.camera_widget.raise_()  # sets the camera label at the top of all widgets
-        self.camera_widget.setVisible(self.camera_default_visible)
+        self.camera_widget.setVisible(self.camera_visible)
 
     def toggle_help_window_preview(self):
-        self.helper_widget_default_visible = not self.helper_widget_default_visible
-        if self.helper_widget_default_visible:
+        self.helper_widget_visible = not self.helper_widget_visible
+        if self.helper_widget_visible:
             self.helper_widget.raise_()  # sets the helper widget at the top of all widgets
-        self.helper_widget.setVisible(self.helper_widget_default_visible)
+        self.helper_widget.setVisible(self.helper_widget_visible)
 
     def closeEvent(self, event):
         self.engine.stop()
