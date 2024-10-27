@@ -15,7 +15,7 @@ class MainWidget(QWidget):
     """
     def __init__(self, parent: QMainWindow):
         super().__init__(parent)
-        self.dish_data = None
+        self.dish_data = []
         self.parent = parent
 
         self.background_image_path = 'resources/img/main_window_background.png'
@@ -27,14 +27,14 @@ class MainWidget(QWidget):
         self.num_visible_items = 5
         self.current_index = 0
 
-        # Here we need to add dish data downloaded from Mongo
         self.load_dishes_from_db()
 
         self.carousel_layout = QHBoxLayout()
 
-        for i in range(self.num_visible_items):
-            dish_card = Card(self.dish_data[i], i == self.num_visible_items // 2)
-            self.carousel_layout.addWidget(dish_card)
+        for index, dish in enumerate(self.dish_data):
+            if index < self.num_visible_items:
+                dish_card = Card(dish, index == self.num_visible_items // 2)
+                self.carousel_layout.addWidget(dish_card)
 
         self.carousel_widget = QWidget()
         self.carousel_widget.setLayout(self.carousel_layout)
