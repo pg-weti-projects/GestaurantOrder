@@ -4,6 +4,7 @@ from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QL
 from PySide6.QtGui import QPixmap, QPalette, QBrush, QFont
 
 from .ui_utils import Card
+from Mongo.mongo_manager import MongoManager
 
 logger = logging.getLogger("app")
 
@@ -14,12 +15,14 @@ class MainWidget(QWidget):
     """
     def __init__(self, parent: QMainWindow):
         super().__init__(parent)
+        self.dish_data = []
         self.parent = parent
 
         self.background_image_path = 'resources/img/main_window_background.png'
         self.set_background(self.background_image_path)
 
         layout = QVBoxLayout(self)
+        self.load_dishes_from_db()
 
         # Top layout
         self.top_layout = QHBoxLayout()
@@ -41,16 +44,6 @@ class MainWidget(QWidget):
         self._add_gestures_images_widgets()
         layout.addWidget(self.bottom_layout_widget, 1)
 
-        # Here we need to add dish data downloaded from Mongo
-        self.dish_data = [
-            {"img_path": "resources/img/dish_img/burger.png", "price": "40 zł", "name": "Burger"},
-            {"img_path": "resources/img/dish_img/carbonara.png", "price": "26 zł", "name": "Carbonara"},
-            {"img_path": "resources/img/dish_img/kebab.png", "price": "33 zł", "name": "Kebab"},
-            {"img_path": "resources/img/dish_img/ramen.png", "price": "25 zł", "name": "Ramen"},
-            {"img_path": "resources/img/dish_img/sandwich.png", "price": "58 zł", "name": "Sandwich"},
-            {"img_path": "resources/img/dish_img/pizza.png", "price": "21 zł", "name": "Pizza"}
-        ]
-
         self.num_visible_items = 5
         self.current_index = 0
         self.main_card = None
@@ -58,6 +51,19 @@ class MainWidget(QWidget):
 
         self.update_carousel()
         self.setLayout(layout)
+
+    def load_dishes_from_db(self):
+        """Loads dish data from the MongoDB."""
+        mongo_manager = MongoManager()
+        dishes = mongo_manager.get_order_list()
+
+        self.dish_data = [{
+                "img_path": dish['image_path'],
+                "price": f"{dish['price']} zł",
+                "name": dish['name']
+            }
+            for dish in dishes
+        ]
 
     def resizeEvent(self, event):
         """resizeEvent method override to adjust background image to new app sizze"""
@@ -111,6 +117,7 @@ class MainWidget(QWidget):
             current_card_index = (self.current_index + i - center_index) % self.cards_number
             is_center = (i == center_index)
             dish_card = Card(self.dish_data[current_card_index], is_center)
+            print(current_card_index, self.dish_data[current_card_index])
             self.carousel_layout.addWidget(dish_card)
 
             if is_center:
