@@ -1,7 +1,7 @@
 import logging
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout
-from PySide6.QtGui import QPixmap, QPalette, QBrush
+from PySide6.QtWidgets import QMainWindow, QWidget, QVBoxLayout, QHBoxLayout, QLabel
+from PySide6.QtGui import QPixmap, QPalette, QBrush, QFont
 
 from .ui_utils import Card
 from Mongo.mongo_manager import MongoManager
@@ -22,25 +22,37 @@ class MainWidget(QWidget):
         self.set_background(self.background_image_path)
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(0, 0, 0, 0)
 
-        self.num_visible_items = 5
-        self.current_index = 0
+        # Top layout
+        self.top_layout = QHBoxLayout()
+        self.top_layout_widget = QWidget()
+        self.top_layout_widget.setLayout(self.top_layout)
+        self._add_logo_and_title()
+        layout.addWidget(self.top_layout_widget, 1)
+
+        # Carousel layout
+        self.carousel_layout = QHBoxLayout(self)
+        self.carousel_widget = QWidget()
+        self.carousel_widget.setLayout(self.carousel_layout)
+        layout.addWidget(self.carousel_widget, 3)
+
+        # Bottom layout
+        self.bottom_layout = QHBoxLayout()
+        self.bottom_layout_widget = QWidget()
+        self.bottom_layout_widget.setLayout(self.bottom_layout)
+        self._add_gestures_images_widgets()
+        layout.addWidget(self.bottom_layout_widget, 1)
 
         self.load_dishes_from_db()
 
         self.carousel_layout = QHBoxLayout()
 
-        for index, dish in enumerate(self.dish_data):
-            if index < self.num_visible_items:
-                dish_card = Card(dish, index == self.num_visible_items // 2)
-                self.carousel_layout.addWidget(dish_card)
+        self.num_visible_items = 5
+        self.current_index = 0
+        self.main_card = None
+        self.cards_number = len(self.dish_data)
 
-        self.carousel_widget = QWidget()
-        self.carousel_widget.setLayout(self.carousel_layout)
-
-        layout.addWidget(self.carousel_widget)
-
+        self.update_carousel()
         self.setLayout(layout)
 
     def load_dishes_from_db(self):
@@ -95,8 +107,81 @@ class MainWidget(QWidget):
             self.carousel_layout.removeWidget(widget_to_remove)
             widget_to_remove.setParent(None)
 
-        for i in range(self.num_visible_items):
-            current_card_index = (self.current_index + i) % len(self.dish_data)
-            is_center = (i == self.num_visible_items // 2)
+        if self.cards_number == 1:
+            num_visible = 1
+            center_index = 0
+        elif self.cards_number <= 3:
+            num_visible = 3
+            center_index = 1
+        else:
+            num_visible = 5
+            center_index = 2
+
+        for i in range(num_visible):
+            current_card_index = (self.current_index + i - center_index) % self.cards_number
+            is_center = (i == center_index)
             dish_card = Card(self.dish_data[current_card_index], is_center)
             self.carousel_layout.addWidget(dish_card)
+
+            if is_center:
+                self.main_card = dish_card
+
+    def _add_gestures_images_widgets(self) -> None:
+        """
+        Adds bottom layout with gestures icons.
+        """
+        right_corner_layout = QHBoxLayout()
+        right_corner_layout.setAlignment(Qt.AlignRight | Qt.AlignBottom)
+
+        image_paths = [
+            'resources/img/gesture_img/closed_hand.png',
+            'resources/img/gesture_img/open_hand.png',
+            'resources/img/gesture_img/thumb_up.png'
+        ]
+        labels = ["MOVE LEFT", "MOVE RIGHT", "CHOOSE DISH"]
+
+        for image_path, label_text in zip(image_paths, labels):
+            widget = QWidget()
+            layout = QVBoxLayout(widget)
+
+            image_label = QLabel()
+            pixmap = QPixmap(image_path)
+            image_label.setPixmap(pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio))
+
+            text_label = QLabel(label_text)
+            text_label.setStyleSheet("font-weight: bold;")
+
+            layout.addWidget(image_label, alignment=Qt.AlignCenter)
+            layout.addWidget(text_label, alignment=Qt.AlignCenter)
+
+            widget.setFixedSize(120, 150)
+            right_corner_layout.addWidget(widget)
+
+        self.bottom_layout.addLayout(right_corner_layout)
+
+    def _add_logo_and_title(self) -> None:
+        """
+        Adds top layout with app logo and name.
+        """
+        left_corner_layout = QHBoxLayout()
+        left_corner_layout.setAlignment(Qt.AlignLeft | Qt.AlignCenter)
+
+        widget = QWidget()
+        layout = QHBoxLayout(widget)
+
+        logo_label = QLabel()
+        logo_pixmap = QPixmap('resources/img/gesture_img/thumb_down.png')
+        logo_label.setPixmap(logo_pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
+
+        title_label = QLabel("GestaurantOrder")
+        title_label.setStyleSheet("font-weight: bold;")
+        title_label.setFont(QFont("Comic Sans MS", 60))
+        title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
+
+        layout.addWidget(logo_label, alignment=Qt.AlignLeft)
+        layout.addWidget(title_label, alignment=Qt.AlignLeft)
+
+        layout.setSpacing(40)
+
+        left_corner_layout.addWidget(widget)
+        self.top_layout.addLayout(left_corner_layout)
