@@ -103,25 +103,26 @@ class MainWidget(QWidget):
             self.carousel_layout.removeWidget(widget_to_remove)
             widget_to_remove.setParent(None)
 
-        if self.cards_number == 1:
-            num_visible = 1
-            center_index = 0
-        elif self.cards_number <= 3:
-            num_visible = 3
-            center_index = 1
-        else:
-            num_visible = 5
-            center_index = 2
+        if self.cards_number > 0:
+            if self.cards_number == 1:
+                num_visible = 1
+                center_index = 0
+            elif self.cards_number <= 3:
+                num_visible = 3
+                center_index = 1
+            else:
+                num_visible = 5
+                center_index = 2
 
-        for i in range(num_visible):
-            current_card_index = (self.current_index + i - center_index) % self.cards_number
-            is_center = (i == center_index)
-            dish_card = Card(self.dish_data[current_card_index], is_center)
-            print(current_card_index, self.dish_data[current_card_index])
-            self.carousel_layout.addWidget(dish_card)
+            for i in range(num_visible):
+                current_card_index = (self.current_index + i - center_index) % self.cards_number
+                is_center = (i == center_index)
+                dish_card = Card(self.dish_data[current_card_index], is_center)
+                print(current_card_index, self.dish_data[current_card_index])
+                self.carousel_layout.addWidget(dish_card)
 
-            if is_center:
-                self.main_card = dish_card
+                if is_center:
+                    self.main_card = dish_card
 
     def _add_gestures_images_widgets(self) -> None:
         """
