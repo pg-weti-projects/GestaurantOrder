@@ -22,6 +22,7 @@ class MainWidget(QWidget):
         self.set_background(self.background_image_path)
 
         layout = QVBoxLayout(self)
+        self.load_dishes_from_db()
 
         # Top layout
         self.top_layout = QHBoxLayout()
@@ -43,10 +44,6 @@ class MainWidget(QWidget):
         self._add_gestures_images_widgets()
         layout.addWidget(self.bottom_layout_widget, 1)
 
-        self.load_dishes_from_db()
-
-        self.carousel_layout = QHBoxLayout()
-
         self.num_visible_items = 5
         self.current_index = 0
         self.main_card = None
@@ -67,7 +64,6 @@ class MainWidget(QWidget):
             }
             for dish in dishes
         ]
-        return self.dish_data
 
     def resizeEvent(self, event):
         """resizeEvent method override to adjust background image to new app sizze"""
@@ -121,6 +117,7 @@ class MainWidget(QWidget):
             current_card_index = (self.current_index + i - center_index) % self.cards_number
             is_center = (i == center_index)
             dish_card = Card(self.dish_data[current_card_index], is_center)
+            print(current_card_index, self.dish_data[current_card_index])
             self.carousel_layout.addWidget(dish_card)
 
             if is_center:
