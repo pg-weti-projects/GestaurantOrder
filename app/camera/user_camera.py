@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 from abc import abstractmethod
@@ -6,7 +5,6 @@ import cv2
 from cvzone import HandTrackingModule
 import mediapipe as mp
 import os
-from .gesture_parser import GestureParser
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtGui import QImage
 
@@ -54,10 +52,10 @@ class UserCamera(QObject):
         while self.running:
             ret, frame = self.cap.read()
             if ret:
-                hands, frame = self.hand.findHands(frame)
 
                 if ret and self.mode == 'fingers':
                     # Process finger detection
+                    hands, frame = self.hand.findHands(frame)
                     gestures = self.detect_gesture(hands)
                     self.display_gestures(frame, gestures)
 

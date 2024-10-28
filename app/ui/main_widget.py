@@ -28,7 +28,7 @@ class MainWidget(QWidget):
 
         layout = QVBoxLayout(self)
         self.dish_data = []
-        self.load_dishes_from_db()
+        self.dish_data_exists = self.load_dishes_from_db()
 
         # Top layout
         self.top_layout = QHBoxLayout()
@@ -63,11 +63,17 @@ class MainWidget(QWidget):
         self.ordered_dish_data = None
         self.last_gesture = None
 
-        self.update_carousel()
+        if self.dish_data_exists:
+            self.update_carousel()
+
         self.setLayout(layout)
 
-    def load_dishes_from_db(self):
-        """Loads dish data from the MongoDB."""
+    def load_dishes_from_db(self) -> bool:
+        """
+        Loads dish data from the MongoDB.
+
+        Returns: True if the dish data exists or False if not
+        """
         mongo_manager = MongoManager()
         dishes = mongo_manager.get_order_list()
 
@@ -78,6 +84,10 @@ class MainWidget(QWidget):
             }
             for dish in dishes
         ]
+        if self.dish_data:
+            return True
+        else:
+            return False
 
     def resizeEvent(self, event):
         """resizeEvent method override to adjust background image to new app sizze"""
@@ -174,13 +184,15 @@ class MainWidget(QWidget):
 
     def show_next_items(self) -> None:
         """Moves the cards visible on the screen forward one item."""
-        self.current_index = (self.current_index + 1) % len(self.dish_data)
-        self.update_carousel()
+        if self.dish_data_exists:
+            self.current_index = (self.current_index + 1) % len(self.dish_data)
+            self.update_carousel()
 
     def show_previous_items(self) -> None:
         """Moves the cards visible on the screen back one item."""
-        self.current_index = (self.current_index - 1) % len(self.dish_data)
-        self.update_carousel()
+        if self.dish_data_exists:
+            self.current_index = (self.current_index - 1) % len(self.dish_data)
+            self.update_carousel()
 
     def update_carousel(self) -> None:
         """
