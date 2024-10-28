@@ -7,7 +7,7 @@ from .additional_widgets.card_widget import CardWidget
 from .additional_widgets.ordering_widget import OrderingWidget
 from .additional_widgets.gesture_counter_widget import GestureCounterWidget
 from .summary_order_widget import SummaryOrderWidget
-
+from Mongo.mongo_manager import MongoManager
 
 logger = logging.getLogger("app")
 
@@ -27,6 +27,8 @@ class MainWidget(QWidget):
         self.set_background(self.background_image_path)
 
         layout = QVBoxLayout(self)
+        self.dish_data = []
+        self.load_dishes_from_db()
 
         # Top layout
         self.top_layout = QHBoxLayout()
@@ -51,16 +53,7 @@ class MainWidget(QWidget):
         self._add_gestures_images_widgets()
         layout.addWidget(self.bottom_layout_widget, 1)
 
-        # Here we need to add dish data downloaded from Mongo
-        self.dish_data = [
-            {"img_path": "resources/img/dish_img/burger.png", "price": 40, "name": "Burger"},
-            {"img_path": "resources/img/dish_img/carbonara.png", "price": 26, "name": "Carbonara"},
-            {"img_path": "resources/img/dish_img/kebab.png", "price": 33, "name": "Kebab"},
-            {"img_path": "resources/img/dish_img/ramen.png", "price": 25, "name": "Ramen"},
-            {"img_path": "resources/img/dish_img/sandwich.png", "price": 58, "name": "Sandwich"},
-            {"img_path": "resources/img/dish_img/pizza.png", "price": 21, "name": "Pizza"}
-        ]
-
+        self.num_visible_items = 5
         self.current_index = 0
         self.selected_card = None
         self.cards_number = len(self.dish_data)
@@ -73,6 +66,23 @@ class MainWidget(QWidget):
         self.update_carousel()
         self.setLayout(layout)
 
+    def load_dishes_from_db(self):
+        """Loads dish data from the MongoDB."""
+        mongo_manager = MongoManager()
+        dishes = mongo_manager.get_order_list()
+
+        self.dish_data = [{
+                "img_path": dish['image_path'],
+                "price": f"{dish['price']} zł",
+                "name": dish['name']
+            }
+            for dish in dishes
+        ]
+
+    def resizeEvent(self, event):
+        """resizeEvent method override to adjust background image to new app sizze"""
+        self.set_background(self.background_image_path)
+        super().resizeEvent(event)
     @Slot(str)
     def handle_gesture(self, gesture: str) -> None:
         """
