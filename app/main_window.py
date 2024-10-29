@@ -89,9 +89,6 @@ class MainApp(QMainWindow):
     @Slot(str)
     def show_success_notification(self, notification_text: str) -> None:
         """Shows notification widget and remove it after few seconds."""
-        if self.notification_widget:
-            self.remove_notification_widget()
-
         if not self.notification_widget:
             self.notification_widget = self.widgets.create_notification_widget(notification_text, "success")
             QTimer.singleShot(5000, self.remove_notification_widget)
@@ -99,9 +96,6 @@ class MainApp(QMainWindow):
     @Slot(str)
     def show_failure_notification(self, notification_text: str) -> None:
         """Shows notification widget and remove it after few seconds."""
-        if self.notification_widget:
-            self.remove_notification_widget()
-
         if not self.notification_widget:
             self.notification_widget = self.widgets.create_notification_widget(notification_text, "failure")
             QTimer.singleShot(5000, self.remove_notification_widget)
