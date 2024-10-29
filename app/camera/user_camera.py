@@ -29,7 +29,7 @@ class UserCamera(QObject):
 
         self.hand = HandTrackingModule.HandDetector()
         self.mode = mode
-        self.last_gesture = None
+        self.last_gesture: str | None = None
         self.last_save_time = 0
         self.save_interval = 1
         self.filename = os.getenv('CAMERA_FILENAME')
@@ -57,7 +57,7 @@ class UserCamera(QObject):
                     # Process finger detection
                     hands, frame = self.hand.findHands(frame)
                     gestures = self.detect_gesture(hands)
-                    self.display_gestures(frame, gestures)
+                    gestures = self.display_gestures(frame, gestures)
 
                 elif ret and self.mode == 'mediapipe':
                     # Process gesture detection with MediaPipe

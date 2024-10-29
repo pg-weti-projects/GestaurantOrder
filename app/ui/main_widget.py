@@ -17,6 +17,8 @@ class MainWidget(QWidget):
     the QStackedWidget.
     """
     gesture_detected = Signal(str)
+    success_notification = Signal(str)
+    failure_notification = Signal(str)
 
     def __init__(self, parent: QMainWindow, monitor_geometry: dict):
         super().__init__(parent)
@@ -24,11 +26,16 @@ class MainWidget(QWidget):
         self.monitor_geometry = monitor_geometry
 
         self.background_image_path = 'resources/img/main_window_background.png'
-        self.set_background(self.background_image_path)
+        self._set_background(self.background_image_path)
 
         layout = QVBoxLayout(self)
-        self.dish_data = []
-        self.dish_data_exists = self.load_dishes_from_db()
+
+        self.gesture_counter = GestureCounterWidget()
+        self.gesture_counter.countdown_finished.connect(self.handle_gesture_on_timer_finished)
+        self.gesture_counter_works: bool = False
+
+        self.dish_data: list = []
+        self.dish_data_exists: bool = self._load_dishes_from_db()
 
         # Top layout
         self.top_layout = QHBoxLayout()
@@ -47,28 +54,26 @@ class MainWidget(QWidget):
         self.bottom_layout = QHBoxLayout()
         self.bottom_layout_widget = QWidget()
         self.bottom_layout_widget.setLayout(self.bottom_layout)
-        self.gesture_counter = GestureCounterWidget()
-        self.gesture_counter_works = False
-        # self.gesture_counter.countdown_finished.connect(self.show_confirmation_widget) # TODO ATTACH TO GESTURE RECOGNITION
         self._add_gestures_images_widgets()
         layout.addWidget(self.bottom_layout_widget, 1)
 
-        self.num_visible_items = 5
-        self.current_index = 0
-        self.selected_card = None
-        self.cards_number = len(self.dish_data)
+        self.num_visible_items: int = 5
+        self.current_index: int = 0
+        self.selected_card: CardWidget | None = None
+        self.cards_number: int = len(self.dish_data)
 
         self.ordering_widget = None
-        self.summary_widget = None
-        self.ordered_dish_data = None
-        self.last_gesture = None
+        self.summary_order_widget = None
+        self.ordered_dish_data: list = []
+
+        self.last_gesture: str | None = None
 
         if self.dish_data_exists:
             self.update_carousel()
 
         self.setLayout(layout)
 
-    def load_dishes_from_db(self) -> bool:
+    def _load_dishes_from_db(self) -> bool:
         """
         Loads dish data from the MongoDB.
 
@@ -79,7 +84,7 @@ class MainWidget(QWidget):
 
         self.dish_data = [{
                 "img_path": dish['image_path'],
-                "price": f"{dish['price']} zł",
+                "price": dish['price'],
                 "name": dish['name']
             }
             for dish in dishes
@@ -89,14 +94,11 @@ class MainWidget(QWidget):
         else:
             return False
 
-    def resizeEvent(self, event):
-        """resizeEvent method override to adjust background image to new app sizze"""
-        self.set_background(self.background_image_path)
-        super().resizeEvent(event)
     @Slot(str)
     def handle_gesture(self, gesture: str) -> None:
         """
-        Handle gesture operation. Sets last gesture and emits detected gesture detection further
+        Sets last gesture, emits detected gesture detection further and handles gesture operation.
+
         Args:
             gesture: Detected gesture name.
         """
@@ -105,100 +107,143 @@ class MainWidget(QWidget):
         self.handle_gesture_operation(gesture)
         logger.debug(f"MainWidget gesture {gesture} set.")
 
-    def on_timer_finished(self) -> None:
-        """
-        Executes actions based on the last recognized gesture when the timer finishes counting.
-
-        The method logs the event and performs the following actions:
-        - If the last gesture was "Thumb_Up", it calls the `select_dish` method responsible for displaying ordering
-        widget.
-        - If the last gesture was "Open_Palm", it calls the `show_next_items` method responsible for moving carousel
-        to the next item.
-        - If the last gesture was "Closed_Fist", it calls the `show_previous_items` method responsible for moving
-        carousel to the previous item.
-        """
-        logger.debug(f"MainWidget timer stopped counting. Making action assigned to {self.last_gesture}.")
-        if self.last_gesture == "Thumb_Up":
-            self.select_dish()
-        elif self.last_gesture == "Open_Palm":
-            self.show_next_items()
-        elif self.last_gesture == "Closed_Fist":
-            self.show_previous_items()
-
     def handle_gesture_operation(self, gesture: str) -> None:
         """
         Handles operations based on detected gestures.
 
         Args:
-            gesture (str): The detected gesture, which can be "Thumb_Up", "Open_Palm", or "Closed_Fist".
+            gesture: The detected gesture, which can be "Thumb_Up", "Thumb_Down, "Open_Palm", or "Closed_Fist".
 
         The method performs the following actions:
-        - If the gesture counter is not currently active and a valid gesture is detected, it starts the gesture counter
-        and connects the countdown finished signal to `on_timer_finished`.
-        - If the gesture counter is already active, it stops the timer, disconnects the signal, and resets the gesture
-        counter status.
+        - If the ordering_widget and summary_order_widget do not exist, the gesture counter is not currently active
+        and a valid gesture is detected, it starts the gesture counter and connects the countdown finished
+        signal to 'handle_gesture_on_timer_finished'.
+        - If the gesture counter is already active and the gesture is not valid, it stops the timer and resets the
+        gesture counter status.
         """
-        if not self.gesture_counter_works:
-            if gesture in ("Thumb_Up", "Open_Palm", "Closed_Fist"):
-                self.gesture_counter_works = True
-                self.gesture_counter.start_timer()
-                self.gesture_counter.countdown_finished.connect(self.on_timer_finished)
-        else:
-            self.gesture_counter.stop_timer()
-            self.gesture_counter.countdown_finished.disconnect(self.on_timer_finished)
-            self.gesture_counter_works = False
+        if not self.ordering_widget and not self.summary_order_widget:
+            if not self.gesture_counter_works:
+                if gesture in ("Thumb_Up", "Thumb_Down", "Open_Palm", "Closed_Fist"):
+                    self.gesture_counter_works = True
+                    self.gesture_counter.start_timer()
+            else:
+                self.gesture_counter.stop_timer()
+                self.gesture_counter_works = False
 
-    def select_dish(self) -> None:
+    def handle_gesture_on_timer_finished(self) -> None:
         """
-        Creates Ordering Widget when the dish is selected.
+        Executes actions based on the last recognized gesture when the timer finishes counting.
+
+        The method logs the event and performs the following actions:
+        - If the last gesture was "Thumb_Up", it calls the `_select_dish` method responsible for displaying ordering
+        widget.
+        - If the last gesture was "Thumb_Down", it calls the `_create_and_show_summary_order_widget` method responsible
+        for creating and displaying summary order widget
+        - If the last gesture was "Open_Palm", it calls the `_show_next_items` method responsible for moving carousel
+        to the next item.
+        - If the last gesture was "Closed_Fist", it calls the `_show_previous_items` method responsible for moving
+        carousel to the previous item.
         """
+        logger.debug(f"MainWidget timer stopped counting. Making action assigned to {self.last_gesture}.")
+        if self.last_gesture == "Thumb_Up":
+            self._select_dish()
+        elif self.last_gesture == "Thumb_Down":
+            self._create_and_show_summary_order_widget()
+        elif self.last_gesture == "Open_Palm":
+            self._show_next_items()
+        elif self.last_gesture == "Closed_Fist":
+            self._show_previous_items()
+
+    def _select_dish(self) -> None:
+        """Creates Ordering Widget when the dish is selected and ordering_widget not exist."""
         if self.selected_card and not self.ordering_widget:
-            print("SELECTED AND OPENED ORDERING WINDOW: ", self.selected_card.dish_name) # TODO REMOVE AFTER TESTING
             self.ordering_widget = OrderingWidget(self.parent, self.monitor_geometry, self.selected_card.dish_data)
             self.gesture_detected.connect(self.ordering_widget.handle_gesture)
+            self.ordering_widget.ordered_dish.connect(self.add_ordered_dish_and_close_ordering_widget)
+            self.ordering_widget.success_order.connect(self.emit_show_success_notification)
+            self.ordering_widget.failure_order.connect(self.emit_show_failure_notification)
             self.ordering_widget.raise_()
 
-    def set_dish_number_in_ordering_widget(self, number: int) -> None:
+    @Slot(str)
+    def emit_show_success_notification(self, notification_text: str) -> None:
+        """Emits success notification signal to the MainApp class for displaying notification with specified text"""
+        self.success_notification.emit(notification_text)
+
+    @Slot(str)
+    def emit_show_failure_notification(self, notification_text: str) -> None:
+        """Emits failure notification signal to the MainApp class for displaying notification with specified text"""
+        self.failure_notification.emit(notification_text)
+
+    @Slot(dict)
+    def add_ordered_dish_and_close_ordering_widget(self, ordered_dish: dict) -> None:
         """
-        Sets the number of dishes in the ordering widget.
+        If the user confirmed ordering selected dish, the ordered dish data will be added to ordered_dish_data list.
+        At the end OrderingWidget is removed.
 
         Args:
-            number (int): The quantity of dishes to be set in the ordering widget.
-
-        If the ordering widget exists, it updates the dish number by calling the 'set_dish_number' method on the widget.
+            ordered_dish: Ordered dish data contains information about amount of the ordered dish and
+            other dish data like name, price for one dish, and img_path.
         """
+        if ordered_dish:
+            self.ordered_dish_data.append(ordered_dish)
+            logger.debug(f"Confirmed order for {ordered_dish['amount']} of {ordered_dish['dish_data']['name']}.")
+        else:
+            logger.debug("Ordering dish has been canceled!")
+
         if self.ordering_widget:
-            self.ordering_widget.set_dish_number(number)
-
-    def close_ordering_widget(self) -> None:
-        """
-        Closes and cleans up the ordering widget.
-
-        If the ordering widget exists, this method disconnects the gesture detection signal from the widget's handling
-        method, deletes the widget, and sets its reference to None, ensuring proper resource management.
-        """
-        if self.ordering_widget:
+            self.ordering_widget.setParent(None)
             self.gesture_detected.disconnect(self.ordering_widget.handle_gesture)
+            self.ordering_widget.ordered_dish.disconnect(self.add_ordered_dish_and_close_ordering_widget)
+            self.ordering_widget.success_order.disconnect(self.emit_show_success_notification)
+            self.ordering_widget.failure_order.disconnect(self.emit_show_failure_notification)
             self.ordering_widget.deleteLater()
             self.ordering_widget = None
 
-    def show_next_items(self) -> None:
-        """Moves the cards visible on the screen forward one item."""
-        if self.dish_data_exists:
-            self.current_index = (self.current_index + 1) % len(self.dish_data)
-            self.update_carousel()
+    def _create_and_show_summary_order_widget(self) -> None:
+        """
+        Creates and shows SummaryOrderWidget with ordered dish if ordered dish have been added by user.
+        If not only notification will be displayed.
+        """
+        if self.ordered_dish_data:
+            self.summary_order_widget = SummaryOrderWidget(self.parent, self.monitor_geometry, self.ordered_dish_data)
+            self.summary_order_widget.setVisible(True)
+            self.gesture_detected.connect(self.summary_order_widget.handle_gesture)
+            self.summary_order_widget.gesture_response.connect(self.handle_summary_order_widget_operation_and_close_widget)
+        else:
+            logger.debug("There are no any data to display in SummaryOrderWidget! Skipping creating this widget.")
+            self.failure_notification.emit(f"There are no any ordered dish! Please order something first.")
 
-    def show_previous_items(self) -> None:
-        """Moves the cards visible on the screen back one item."""
-        if self.dish_data_exists:
-            self.current_index = (self.current_index - 1) % len(self.dish_data)
-            self.update_carousel()
+    @Slot(str)
+    def handle_summary_order_widget_operation_and_close_widget(self, user_operation: str) -> None:
+        """
+        Handle operation from emitted from SummaryOrderWidget when the user confirmed or canceled order. If the order
+        is confirmed it displays the confirmation notification and cancel notification if the order is canceled.
+
+        Args:
+            user_operation: Selected operation by user ( confirmed or canceled order ).
+        """
+        order_number = 6
+        if user_operation == "confirmed":
+            self.success_notification.emit(f"Your order has been confirmed! Your order number is {order_number}.")
+        elif user_operation == "canceled":
+            self.failure_notification.emit(f"Your order has been canceled!")
+        else:
+            logger.error("Incorrect user operation from SummaryOrderWidget!")
+
+        if self.summary_order_widget:
+            self.summary_order_widget.setParent(None)
+            self.gesture_detected.disconnect(self.summary_order_widget.handle_gesture)
+            self.summary_order_widget.gesture_response.disconnect(self.handle_summary_order_widget_operation_and_close_widget)
+            self.summary_order_widget.deleteLater()
+            self.summary_order_widget = None
+            self.ordered_dish_data = []
 
     def update_carousel(self) -> None:
         """
-        Removes the Card objects currently visible on the screen and then generates next cards to be displayed.
+        Removes the Card objects currently visible on the screen and then generates next cards to be displayed if the
+        OrderingWidget and SummaryOrderWidget not exist ( if the widget exist the carousel must be blocked ).
         """
-        if not self.ordering_widget:
+        if not self.ordering_widget and not self.summary_order_widget:
             for i in reversed(range(self.carousel_layout.count())):
                 widget_to_remove = self.carousel_layout.itemAt(i).widget()
                 self.carousel_layout.removeWidget(widget_to_remove)
@@ -223,21 +268,32 @@ class MainWidget(QWidget):
                 if is_center:
                     self.selected_card = CardWidget(self.dish_data[current_card_index], is_center, self.monitor_geometry)
 
+    def _show_next_items(self) -> None:
+        """Moves the cards visible on the screen forward one item."""
+        if self.dish_data_exists:
+            self.current_index = (self.current_index + 1) % len(self.dish_data)
+            self.update_carousel()
+
+    def _show_previous_items(self) -> None:
+        """Moves the cards visible on the screen back one item."""
+        if self.dish_data_exists:
+            self.current_index = (self.current_index - 1) % len(self.dish_data)
+            self.update_carousel()
+
     def _add_gestures_images_widgets(self) -> None:
-        """
-        Adds bottom layout with gestures icons.
-        """
+        """Adds bottom layout with gestures icons."""
         right_corner_layout = QHBoxLayout()
         right_corner_layout.setAlignment(Qt.AlignRight | Qt.AlignBottom)
 
         right_corner_layout.addWidget(self.gesture_counter)
 
         image_paths = [
-            'resources/img/gesture_img/closed_fist.png',
-            'resources/img/gesture_img/open_hand.png',
-            'resources/img/gesture_img/thumb_up.png'
+            "resources/img/gesture_img/closed_fist.png",
+            "resources/img/gesture_img/open_hand.png",
+            "resources/img/gesture_img/thumb_up.png",
+            "resources/img/gesture_img/thumb_down.png"
         ]
-        labels = ["MOVE LEFT", "MOVE RIGHT", "CHOOSE DISH"]
+        labels = ["MOVE LEFT", "MOVE RIGHT", "CHOOSE DISH", "SUMMARY"]
         for image_path, label_text in zip(image_paths, labels):
             widget = QWidget()
             layout = QVBoxLayout(widget)
@@ -258,9 +314,7 @@ class MainWidget(QWidget):
         self.bottom_layout.addLayout(right_corner_layout)
 
     def _add_logo_and_title(self) -> None:
-        """
-        Adds top layout with app logo and name.
-        """
+        """Adds top layout with app logo and name."""
         left_corner_layout = QHBoxLayout()
         left_corner_layout.setAlignment(Qt.AlignLeft | Qt.AlignCenter)
 
@@ -285,11 +339,11 @@ class MainWidget(QWidget):
         self.top_layout.addLayout(left_corner_layout)
 
     def resizeEvent(self, event):
-        """resizeEvent method override to adjust background image to new app size"""
-        self.set_background(self.background_image_path)
+        """Overwrite resizeEvent method to adjust background image to new app size"""
+        self._set_background(self.background_image_path)
         super().resizeEvent(event)
 
-    def set_background(self, image_path) -> None:
+    def _set_background(self, image_path) -> None:
         """
         Sets an image as the widget's background, adapting it to the window size.
 
@@ -302,26 +356,3 @@ class MainWidget(QWidget):
         palette.setBrush(QPalette.Window, QBrush(pixmap))
         self.setPalette(palette)
         self.setAutoFillBackground(True)
-
-    def create_summary_widget(self): # TODO TEMP FOR TESTING
-        """
-        TEMP FUNCTION FOR SummaryOrderWidget TESTS.
-        """
-        self.dish_data = [
-            {"img_path": "resources/img/dish_img/burger.png", "price": 40, "name": "Burger"},
-            {"img_path": "resources/img/dish_img/carbonara.png", "price": 26, "name": "Carbonara"},
-            {"img_path": "resources/img/dish_img/kebab.png", "price": 33, "name": "Kebab"},
-            {"img_path": "resources/img/dish_img/ramen.png", "price": 25, "name": "Ramen"},
-            {"img_path": "resources/img/dish_img/sandwich.png", "price": 58, "name": "Sandwich"},
-            {"img_path": "resources/img/dish_img/pizza.png", "price": 21, "name": "Pizza"}
-        ]
-
-        temp = [
-            {"amount": 2, "dish_data": self.dish_data[0]},
-            {"amount": 2, "dish_data": self.dish_data[0]},
-            {"amount": 3, "dish_data": self.dish_data[2]},
-            {"amount": 2, "dish_data": self.dish_data[3]},
-            {"amount": 6, "dish_data": self.dish_data[3]}
-        ]
-        self.summary_widget = SummaryOrderWidget(self.parent, self.monitor_geometry, temp)
-        self.summary_widget.setVisible(True)

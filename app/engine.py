@@ -45,7 +45,8 @@ class Engine(QObject):
     @Slot(str)
     def handle_gesture(self, gesture: str) -> None:
         """
-        Handle gesture operation. Sets last gesture and emits detected gesture detection further
+        Emits detected gesture detection further.
+
         Args:
             gesture: Detected gesture name.
         """
