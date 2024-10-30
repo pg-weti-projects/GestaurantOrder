@@ -24,6 +24,7 @@ class MainWidget(QWidget):
         super().__init__(parent)
         self.parent = parent
         self.monitor_geometry = monitor_geometry
+        self.mongo_manager = MongoManager()
 
         self.background_image_path = 'resources/img/main_window_background.png'
         self._set_background(self.background_image_path)
@@ -60,7 +61,6 @@ class MainWidget(QWidget):
         self.num_visible_items: int = 5
         self.current_index: int = 0
         self.selected_card: CardWidget | None = None
-        self.cards_number: int = len(self.dish_data)
 
         self.ordering_widget = None
         self.summary_order_widget = None
@@ -73,14 +73,23 @@ class MainWidget(QWidget):
 
         self.setLayout(layout)
 
+    @Slot()
+    def update_carousel_data(self) -> None:
+        """
+        Updates carousel dish data and carousel.
+        """
+        self.dish_data_exists = self._load_dishes_from_db()
+
+        if self.dish_data_exists:
+            self.update_carousel()
+
     def _load_dishes_from_db(self) -> bool:
         """
         Loads dish data from the MongoDB.
 
         Returns: True if the dish data exists or False if not
         """
-        mongo_manager = MongoManager()
-        dishes = mongo_manager.get_order_list()
+        dishes = self.mongo_manager.get_order_list()
 
         self.dish_data = [{
                 "img_path": dish['image_path'],
@@ -249,10 +258,11 @@ class MainWidget(QWidget):
                 self.carousel_layout.removeWidget(widget_to_remove)
                 widget_to_remove.setParent(None)
 
-            if self.cards_number == 1:
+            cards_number = len(self.dish_data)
+            if cards_number == 1:
                 num_visible = 1
                 center_index = 0
-            elif self.cards_number <= 3:
+            elif cards_number <= 3:
                 num_visible = 3
                 center_index = 1
             else:
@@ -260,7 +270,7 @@ class MainWidget(QWidget):
                 center_index = 2
 
             for i in range(num_visible):
-                current_card_index = (self.current_index + i - center_index) % self.cards_number
+                current_card_index = (self.current_index + i - center_index) % cards_number
                 is_center = (i == center_index)
                 dish_card = CardWidget(self.dish_data[current_card_index], is_center, self.monitor_geometry)
                 self.carousel_layout.addWidget(dish_card)
@@ -322,7 +332,7 @@ class MainWidget(QWidget):
         layout = QHBoxLayout(widget)
 
         logo_label = QLabel()
-        logo_pixmap = QPixmap('resources/img/gesture_img/thumb_down.png')
+        logo_pixmap = QPixmap('resources/img/app_logo.png')
         logo_label.setPixmap(logo_pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
 
         title_label = QLabel("GestaurantOrder")
