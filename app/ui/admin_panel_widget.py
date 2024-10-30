@@ -1,7 +1,7 @@
 import logging
 from Mongo.mongo_manager import MongoManager
 
-from PySide6.QtCore import Qt
+from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap, QFont
 from PySide6.QtWidgets import (QMainWindow, QWidget, QPushButton, QVBoxLayout, QTableWidget, QTableWidgetItem, QLabel,
                                QFileDialog, QApplication, QHBoxLayout)
@@ -13,6 +13,8 @@ class AdminPanel(QWidget):
     """
     Class responsible for admin GUI operations. This widget is one of the main ones and is a part of the QStackedWidget.
     """
+    db_data_changed = Signal()
+
     def __init__(self, parent: QMainWindow):
         super().__init__(parent)
 
@@ -140,6 +142,7 @@ class AdminPanel(QWidget):
                 if success:
                     self.dish_table.removeRow(current_row)
                     logger.info(f"Successfully deleted dish with ID: {dish_id}")
+                    self.db_data_changed.emit()
                 else:
                     logger.error(f"Failed to delete dish with ID: {dish_id} from database.")
 
@@ -174,6 +177,7 @@ class AdminPanel(QWidget):
                             updated_dish['image_path'] = self.get_image_path_from_label(image_widget)
 
                 self.mongo_manager.update_record(updated_dish)
+            self.db_data_changed.emit()
 
         if column == 3:
             self.add_image(row)
@@ -209,3 +213,4 @@ class AdminPanel(QWidget):
             else:
                 updated_dish = {"_id": ObjectId(dish_id), "name": name, "price": price, "image_path": image_path}
                 self.mongo_manager.update_record(updated_dish)
+            self.db_data_changed.emit()

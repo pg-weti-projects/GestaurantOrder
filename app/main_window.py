@@ -24,9 +24,9 @@ class MainApp(QMainWindow):
         self.widgets = WidgetsManager(self.utils.get_monitor_geometry(), self)
 
         # Define main views ( widgets managed by QStackedWidget ) - only one of them can be displayed at a time
-        self.default_visible_main_widget_name = "main_view_widget"
+        self.default_visible_main_widget_name = "main_widget"
         self.main_widgets = {
-            "main_view_widget": self.widgets.create_main_widget(default_visibility=False),
+            "main_widget": self.widgets.create_main_widget(default_visibility=False),
             "admin_panel": self.widgets.create_admin_panel_widget(default_visibility=False)
         }
         self.stacked_widget = QStackedWidget(self)
@@ -44,8 +44,8 @@ class MainApp(QMainWindow):
         self.camera_widget, self.camera_label = self.widgets.create_camera_preview_label(default_visibility=False)
 
         self.notification_widget = None
-        self.main_widgets["main_view_widget"].success_notification.connect(self.show_success_notification)
-        self.main_widgets["main_view_widget"].failure_notification.connect(self.show_failure_notification)
+        self.main_widgets["main_widget"].success_notification.connect(self.show_success_notification)
+        self.main_widgets["main_widget"].failure_notification.connect(self.show_failure_notification)
 
         # Set up main layout and widget for other widgets
         layout = QVBoxLayout()
@@ -59,7 +59,11 @@ class MainApp(QMainWindow):
 
         self.engine.frame_ready.connect(self.update_image)
         self.engine.gesture_detected.connect(self.handle_gesture)
-        self.gesture_detected.connect(self.main_widgets['main_view_widget'].handle_gesture)
+        self.gesture_detected.connect(self.main_widgets['main_widget'].handle_gesture)
+
+        # Detects if data have been updated in admin panel and updates carousel in main widget
+        self.main_widgets["admin_panel"].db_data_changed.connect(
+            self.main_widgets["main_widget"].update_carousel_data)
 
         self.engine.start()
         self.showFullScreen()
@@ -113,7 +117,7 @@ class MainApp(QMainWindow):
         if event.key() == Qt.Key_Escape:
             self.close()
         elif event.key() == Qt.Key_1:
-            self.toggle_main_widgets(self.main_widgets['main_view_widget'])
+            self.toggle_main_widgets(self.main_widgets['main_widget'])
         elif event.key() == Qt.Key_2:
             self.toggle_main_widgets(self.main_widgets['admin_panel'])
         elif event.key() == Qt.Key_3:
@@ -121,7 +125,7 @@ class MainApp(QMainWindow):
         elif event.key() == Qt.Key_H:
             self.toggle_help_window_preview()
         else:
-            logger.error(f"Unrecognized key! {event.key()}")
+            logger.debug(f"Unrecognized keyboard key! {event.key()}")
 
     def toggle_main_widgets(self, actual_widget: QWidget) -> None:
         """Toggle widgets defined in QStackedWidget."""
