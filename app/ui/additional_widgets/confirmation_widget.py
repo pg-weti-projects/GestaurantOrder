@@ -17,6 +17,7 @@ class ConfirmationWidget(QWidget):
     def __init__(self, parent, number_to_order: int, dish_name: str, dish_price: int, monitor_geometry: dict):
         super().__init__(parent)
         self._set_window_geometry(monitor_geometry['width'], monitor_geometry['height'])
+        font = self._set_font_size(monitor_geometry['width'], monitor_geometry['height'])
         self.setVisible(True)
         self.raise_()
 
@@ -33,8 +34,9 @@ class ConfirmationWidget(QWidget):
         message_layout = QVBoxLayout()
         full_price = dish_price * number_to_order
         message_label = QLabel(f"Do you want to order {number_to_order} {dish_name} for {full_price} zł?", self)
+        message_label.setWordWrap(True)
         message_label.setAlignment(Qt.AlignCenter)
-        message_label.setStyleSheet("font-weight: bold; color: black; font-size: 32px")
+        message_label.setStyleSheet(f"font-weight: bold; color: black; font-size: {font}px")
         message_layout.addWidget(message_label)
         layout.addLayout(message_layout, 2)
 
@@ -141,11 +143,51 @@ class ConfirmationWidget(QWidget):
         self.bottom_layout.addLayout(right_corner_layout)
 
     def _set_window_geometry(self, m_width: int, m_height: int) -> None:
-        """Sets ConfirmationWidget geometry."""
+        """
+        Sets self object geometry.
+        """
+        if m_width == 1512 and m_height == 982:  # MacBook 4K
+            height_ratio = 0.7
+            y_offset_ratio = 0.4
+        elif m_width == 1920 and m_height == 1080:  # Full HD
+            height_ratio = 0.5
+            y_offset_ratio = 0.25
+        elif m_width == 2560 and m_height == 1440:  # 2K
+            height_ratio = 0.5
+            y_offset_ratio = 0.25
+        elif m_width == 3840 and m_height == 2160:  # 4K
+            height_ratio = 0.5
+            y_offset_ratio = 0.25
+        else:
+            height_ratio = 0.7
+            y_offset_ratio = 0.4
+
         m_center_width = m_width // 2
         m_center_height = m_height // 2
         window_x_pos = m_width * 0.3
         self.setGeometry(m_center_width - window_x_pos / 2,
-                         m_center_height - (m_height * 0.25),
+                         m_center_height - (m_height * y_offset_ratio),
                          window_x_pos,
-                         m_height * 0.5)
+                         m_height * height_ratio)
+
+    @staticmethod
+    def _set_font_size(screen_width: int, screen_height: int) -> int:
+        """
+        Calculate the size of the font for the Confirmation widget.
+
+        Args:
+            screen_width: Width of the screen.
+            screen_height: Height of the screen.
+
+        Returns: Size of the font
+        """
+        if screen_width == 1512 and screen_height == 982:  # MacBook 4K
+            return 18
+        elif screen_width == 1920 and screen_height == 1080:  # Full HD
+            return 30
+        elif screen_width == 2560 and screen_height == 1440:  # 2K
+            return 30
+        elif screen_width == 3840 and screen_height == 2160:  # 4K
+            return 30
+        else:
+            return 30

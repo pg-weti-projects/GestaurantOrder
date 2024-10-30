@@ -84,7 +84,9 @@ class CardWidget(QWidget):
 
         Returns: A tuple (width, height).
         """
-        if screen_width == 1920 and screen_height == 1080:  # Full HD
+        if screen_width == 1512 and screen_height == 982:  # MacBook 4K
+            return (220, 360) if is_center else (170, 310)
+        elif screen_width == 1920 and screen_height == 1080:  # Full HD
             return (220, 360) if is_center else (170, 310)
         elif screen_width == 2560 and screen_height == 1440:  # 2K
             return (270, 410) if is_center else (220, 360)
@@ -104,7 +106,9 @@ class CardWidget(QWidget):
 
         Returns: Size of the font
         """
-        if screen_width == 1920 and screen_height == 1080:  # Full HD
+        if screen_width == 1512 and screen_height == 982:  # MacBook 4K
+            return 18
+        elif screen_width == 1920 and screen_height == 1080:  # Full HD
             return 15
         elif screen_width == 2560 and screen_height == 1440:  # 2K
             return 20

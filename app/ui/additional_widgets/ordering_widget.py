@@ -26,6 +26,7 @@ class OrderingWidget(QWidget):
         self.selected_dish_data: dict = selected_dish_data
         self.monitor_geometry: dict = monitor_geometry
         self._set_window_geometry(monitor_geometry['width'], monitor_geometry['height'])
+        image_size, widget_size = self._scaled_sizes(monitor_geometry['width'], monitor_geometry['height'])
         self.setVisible(True)
 
         main_widget = QWidget()
@@ -65,7 +66,7 @@ class OrderingWidget(QWidget):
         self.bottom_layout = QHBoxLayout()
         self.bottom_layout_widget = QWidget()
         self.bottom_layout_widget.setLayout(self.bottom_layout)
-        self._add_bottom_images_and_counter()
+        self._add_bottom_images_and_counter(image_size, widget_size)
         layout.addWidget(self.bottom_layout_widget, 1)
 
         main_layout = QVBoxLayout(self)
@@ -191,6 +192,7 @@ class OrderingWidget(QWidget):
         """Adds a header label widget to the top layout of the interface."""
         header_label = QLabel("How many pieces of the product do you want to order?", self)
         header_label.setAlignment(Qt.AlignCenter)
+        header_label.setWordWrap(True)
         header_font = QFont()
         header_font.setPointSize(16)
         header_font.setBold(True)
@@ -198,7 +200,7 @@ class OrderingWidget(QWidget):
         header_label.setStyleSheet("color: black;")
         self.top_layout.addWidget(header_label)
 
-    def _add_bottom_images_and_counter(self) -> None:
+    def _add_bottom_images_and_counter(self, image_size: int, widget_size: int) -> None:
         """Adds bottom layout with gestures icons and counter widget."""
         right_corner_layout = QHBoxLayout()
         right_corner_layout.setAlignment(Qt.AlignRight | Qt.AlignBottom)
@@ -215,7 +217,7 @@ class OrderingWidget(QWidget):
 
             image_label = QLabel()
             pixmap = QPixmap(image_path)
-            image_label.setPixmap(pixmap.scaled(50, 50, Qt.AspectRatioMode.KeepAspectRatio))
+            image_label.setPixmap(pixmap.scaled(image_size, image_size, Qt.AspectRatioMode.KeepAspectRatio))
 
             text_label = QLabel(label_text)
             text_label.setStyleSheet("font-weight: bold; color: black;")
@@ -223,17 +225,58 @@ class OrderingWidget(QWidget):
             layout.addWidget(image_label, alignment=Qt.AlignCenter)
             layout.addWidget(text_label, alignment=Qt.AlignCenter)
 
-            widget.setFixedSize(110, 110)
+            widget.setFixedSize(widget_size, widget_size)
             right_corner_layout.addWidget(widget)
 
         self.bottom_layout.addLayout(right_corner_layout)
 
     def _set_window_geometry(self, m_width: int, m_height: int) -> None:
-        """Sets OrderingWidget geometry."""
+        """
+        Sets self object geometry.
+        """
+        if m_width == 1512 and m_height == 982:  # MacBook 4K
+            height_ratio = 0.7
+            y_offset_ratio = 0.4
+        elif m_width == 1920 and m_height == 1080:  # Full HD
+            height_ratio = 0.5
+            y_offset_ratio = 0.25
+        elif m_width == 2560 and m_height == 1440:  # 2K
+            height_ratio = 0.5
+            y_offset_ratio = 0.25
+        elif m_width == 3840 and m_height == 2160:  # 4K
+            height_ratio = 0.7
+            y_offset_ratio = 0.3
+        else:
+            height_ratio = 0.7
+            y_offset_ratio = 0.3
+
         m_center_width = m_width // 2
         m_center_height = m_height // 2
         window_x_pos = m_width * 0.3
-        self.setGeometry(m_center_width - window_x_pos / 2,
-                         m_center_height - (m_height * 0.25),
+        self.setGeometry(m_center_width - window_x_pos // 2,
+                         m_center_height - (m_height * y_offset_ratio),
                          window_x_pos,
-                         m_height * 0.5)
+                         m_height * height_ratio)
+
+    @staticmethod
+    def _scaled_sizes(screen_width: int, screen_height: int) -> tuple:
+        """
+        Calculate the value of the scaled size.
+
+        Args:
+            screen_width: Width of the screen.
+            screen_height: Height of the screen.
+
+        Returns:
+            Tuple image_size, widget_size.
+        """
+        if screen_width == 1512 and screen_height == 982:  # MacBook 4K
+            return 40, 130
+        elif screen_width == 1920 and screen_height == 1080:  # Full HD
+            return 50, 110
+        elif screen_width == 2560 and screen_height == 1440:  # 2K
+            return 50, 110
+        elif screen_width == 3840 and screen_height == 2160:  # 4K
+            return 50, 110
+        else:
+            return 50, 110
