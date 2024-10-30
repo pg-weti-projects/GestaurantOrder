@@ -48,10 +48,17 @@ class FingersDetector(UserCamera):
             gestures['right_num_fingers'] = 0
             gestures['right_is_open'] = False
             gestures['all_fingers'] = 0
+            gestures['none_gestures'] = "None"
 
         return gestures
 
     def display_gestures(self, frame, gestures) -> str:
+
+        # Display and return None gesture
+        if 'none_gestures' in gestures:
+            cv2.putText(frame, "None gestures", (10, 70),  # Y = 70
+                        cv2.FONT_HERSHEY_SIMPLEX, 1, (255, 0, 0), 2, cv2.LINE_AA)
+            return gestures['none_gestures']
 
         # Display Left Hand Info
         left_num_fingers = gestures.get('left_num_fingers', 0)

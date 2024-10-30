@@ -47,6 +47,9 @@ class MainApp(QMainWindow):
         self.main_widgets["main_view_widget"].success_notification.connect(self.show_success_notification)
         self.main_widgets["main_view_widget"].failure_notification.connect(self.show_failure_notification)
 
+        # Connects change model signal
+        self.main_widgets["main_view_widget"].change_gesture_mode.connect(self.change_mode)
+
         # Set up main layout and widget for other widgets
         layout = QVBoxLayout()
         layout.addWidget(self.stacked_widget)
