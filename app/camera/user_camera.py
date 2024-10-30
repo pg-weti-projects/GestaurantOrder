@@ -1,4 +1,3 @@
-import json
 import logging
 import time
 from abc import abstractmethod
@@ -6,7 +5,6 @@ import cv2
 from cvzone import HandTrackingModule
 import mediapipe as mp
 import os
-from .gesture_parser import GestureParser
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtGui import QImage
 
@@ -31,7 +29,7 @@ class UserCamera(QObject):
 
         self.hand = HandTrackingModule.HandDetector()
         self.mode = mode
-        self.last_gesture = None
+        self.last_gesture: str | None = None
         self.last_save_time = 0
         self.save_interval = 1
         self.filename = os.getenv('CAMERA_FILENAME')
@@ -55,24 +53,19 @@ class UserCamera(QObject):
             ret, frame = self.cap.read()
             if ret:
 
-                if not ret:
-                    logger.error("Frame capture failed. Retrying...")
-                    continue
-
                 if ret and self.mode == 'fingers':
                     # Process finger detection
                     hands, frame = self.hand.findHands(frame)
                     gestures = self.detect_gesture(hands)
-                    self.display_gestures(frame, gestures)
+                    gestures = self.display_gestures(frame, gestures)
 
                 elif ret and self.mode == 'mediapipe':
                     # Process gesture detection with MediaPipe
                     gestures = self.detect_gesture(frame)
                     gestures = self.display_gestures(frame, gestures)
-                #
+
                 current_time = time.time()
                 if gestures != self.last_gesture and current_time - self.last_save_time >= self.save_interval:
-                    # self.emit_gesture_json(gestures)
                     self.last_gesture = gestures
                     self.gesture_detected.emit(self.last_gesture)
                     self.last_save_time = current_time
@@ -94,21 +87,6 @@ class UserCamera(QObject):
     @abstractmethod
     def display_gestures(self, frame, gestures):
         pass
-
-    def emit_gesture_json(self, gestures):
-        """
-        Emit the detected gestures as a JSON.
-        """
-        if "all_fingers" in gestures:
-            gesture_data = {
-                "gestures": gestures["all_fingers"]
-            }
-        else:
-            gesture_data = { "gestures": gestures}
-        gesture_json = json.dumps(gesture_data)
-        self.gesture_detected.emit(gesture_json)
-
-        GestureParser().gesture_json_to_file(gesture_data, self.filename)
 
     def stop(self):
         self.running = False

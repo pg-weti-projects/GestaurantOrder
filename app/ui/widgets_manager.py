@@ -1,6 +1,5 @@
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import (QMainWindow, QLabel, QWidget, QSizePolicy, QVBoxLayout, QHBoxLayout, QPushButton,
-                               QMessageBox)
+from PySide6.QtWidgets import QMainWindow, QLabel, QWidget, QSizePolicy, QVBoxLayout
 
 from .admin_panel_widget import AdminPanel
 from .main_widget import MainWidget
@@ -12,6 +11,7 @@ class WidgetsManager:
     """
     def __init__(self, monitor_geometry: dict, main_window: QMainWindow):
         self._main_window = main_window
+        self.monitor_geometry = monitor_geometry
         self._m_width = monitor_geometry['width']
         self._m_height = monitor_geometry['height']
         self._m_center_width = monitor_geometry['width'] / 2
@@ -80,56 +80,49 @@ class WidgetsManager:
 
         return camera_widget, camera_label
 
-
-    def create_test_widget(self, default_visibility: bool) -> QWidget:
+    def create_notification_widget(self, text: str, notification_type: str) -> QWidget:
         """
-        Creates widget for testing algorithms and app with 3 clickable squares at the horizontal center of app.
+        Creates notification widget with specified text. Sets notification background based on the specified
+        notification_status param. If the param is 'success' the background will be green but if is 'failure' the
+        background will be red.
 
         Args:
-            default_visibility: Sets the default setting of the widget visibility.
+            text: Text to be set in notification widget.
+            notification_type: Notification type to set proper background color of notification.
 
-        Returns: Test widget object
+        Returns: QWidget with QLabel.
         """
-        test_widget = QWidget(self._main_window)
-        layout = QVBoxLayout(test_widget)
-        row_layout = QHBoxLayout()
+        notification_widget = QWidget(self._main_window)
+        notification_widget.setGeometry(
+            self._main_window.width() // 3,
+            50,
+            self._main_window.width() // 3,
+            100
+        )
 
-        button_labels = {"CARBONARA": "resources/img/dish_img/carbonara.png",
-                         "PIZZA": "resources/img/dish_img/pizza.png",
-                         "RAMEN": "resources/img/dish_img/ramen.png"}
+        if notification_type == "success":
+            bg_color = "#228B22"
+        elif notification_type == "failure":
+            bg_color = "#800020"
+        else:
+            bg_color = "#D3D3D3"
 
-        for btn_label, img_path in button_labels.items():
-            button = QPushButton("", test_widget)
-            button.setFixedSize(300, 300)
-            button.setStyleSheet(f"""
-                QPushButton {{
-                    background-image: url('{img_path}');
-                    background-position: center;
-                    background-repeat: no-repeat;
-                    background-size: contain;
-                    border: 1px black;
-                }}
-                QPushButton:hover {{
-                    border: 5px solid lightblue;
-                }}
-                QPushButton:focus {{
-                    border: 6px solid blue;
-                    outline: none;
-            }}
-            """)
+        notification_widget.setStyleSheet(f"background-color: {bg_color}; border-radius: 10px;")
+        notification_widget.setContentsMargins(5, 5, 5, 5)
 
-            button.clicked.connect(lambda _, label=btn_label: self._show_button_message(label))
-            row_layout.addWidget(button)
+        label = QLabel(text, notification_widget)
+        label.setStyleSheet("color: white; font-size: 22px; font-weight: bold;")
+        label.setWordWrap(True)
+        label.setAlignment(Qt.AlignCenter)
 
-        layout.addLayout(row_layout)
-        test_widget.setLayout(layout)
-        test_widget.setVisible(default_visibility)
+        layout = QVBoxLayout(notification_widget)
+        layout.addWidget(label)
+        notification_widget.setLayout(layout)
 
-        return test_widget
+        notification_widget.raise_()
+        notification_widget.show()
 
-    def _show_button_message(self, btn_label: str) -> None:
-        """Shows a message box when a button is clicked."""
-        QMessageBox.information(self._main_window, "Button Clicked", f"CLICKED {btn_label}!")
+        return notification_widget
 
     def create_admin_panel_widget(self, default_visibility: bool) -> QWidget:
         """
@@ -153,6 +146,6 @@ class WidgetsManager:
 
         Returns: Main view widget object
         """
-        main_widget = MainWidget(self._main_window)
+        main_widget = MainWidget(self._main_window, self.monitor_geometry)
         main_widget.setVisible(default_visibility)
         return main_widget

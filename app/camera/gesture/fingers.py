@@ -51,7 +51,7 @@ class FingersDetector(UserCamera):
 
         return gestures
 
-    def display_gestures(self, frame, gestures):
+    def display_gestures(self, frame, gestures) -> str:
 
         # Display Left Hand Info
         left_num_fingers = gestures.get('left_num_fingers', 0)
@@ -72,3 +72,5 @@ class FingersDetector(UserCamera):
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
         cv2.putText(frame, right_status_text, (10, 220),  # Y = 220 (shifted down)
                     cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 255, 0), 2, cv2.LINE_AA)
+
+        return str(left_num_fingers + right_num_fingers)
