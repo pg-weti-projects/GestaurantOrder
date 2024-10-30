@@ -303,7 +303,7 @@ class MainWidget(QWidget):
             image_label.setPixmap(pixmap.scaled(100, 100, Qt.AspectRatioMode.KeepAspectRatio))
 
             text_label = QLabel(label_text)
-            text_label.setStyleSheet("font-weight: bold;")
+            text_label.setStyleSheet("font-weight: bold; color: white;")
 
             layout.addWidget(image_label, alignment=Qt.AlignCenter)
             layout.addWidget(text_label, alignment=Qt.AlignCenter)
@@ -326,7 +326,7 @@ class MainWidget(QWidget):
         logo_label.setPixmap(logo_pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
 
         title_label = QLabel("GestaurantOrder")
-        title_label.setStyleSheet("font-weight: bold;")
+        title_label.setStyleSheet("font-weight: bold; color: white;")
         title_label.setFont(QFont("Comic Sans MS", 60))
         title_label.setAlignment(Qt.AlignLeft | Qt.AlignVCenter)
 
