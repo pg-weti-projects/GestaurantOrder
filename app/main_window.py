@@ -1,5 +1,4 @@
 import logging
-from pynput.keyboard import Controller
 from PySide6.QtCore import Slot, Qt, Signal, QTimer
 from PySide6.QtWidgets import QMainWindow, QStackedWidget, QVBoxLayout, QWidget
 from PySide6.QtGui import QPixmap, QImage
@@ -7,8 +6,6 @@ from PySide6.QtGui import QPixmap, QImage
 from engine import Engine
 from ui.widgets_manager import WidgetsManager
 from utils import Utils
-
-keyboard = Controller()
 
 logger = logging.getLogger("app")
 
