@@ -332,7 +332,7 @@ class MainWidget(QWidget):
         layout = QHBoxLayout(widget)
 
         logo_label = QLabel()
-        logo_pixmap = QPixmap('resources/img/gesture_img/thumb_down.png')
+        logo_pixmap = QPixmap('resources/img/app_logo.png')
         logo_label.setPixmap(logo_pixmap.scaled(150, 150, Qt.AspectRatioMode.KeepAspectRatio))
 
         title_label = QLabel("GestaurantOrder")
