@@ -14,18 +14,33 @@ python app/app.py
 ```
 
 ## AVAILABLE OPTIONS
-    1 - Toggle main app preview
+    F1 - Toggle main app preview
 
-    2 - Toggle test widget preview
+    F2 - Toggle Admin Panel preview
 
-    3 - Toggle Admin Panel preview
+    F3 - Toggle camera preview
 
-    9 - Toggle camera preview
+    F4 - Toggle help window
 
-    A - Move carousel left ( Available only in main window widget )
 
-    D - Move carousel right ( Available only in main window widget )
+## GESTURE APP CONTROL
 
-    H - Toggle help window
+The application includes several gestures detected by the camera with which you cna control the application. These are:
 
+- Thumb_Up
+- Thumb_Down
+- Open_Palm
+- Closed_Fist
+- Fingers number 0 - 10
+
+When the app starts, the live camera reads the gestures that user shows in front of the camera. Then, the gestures are
+interpreted by the application and a specific action assigned to a given gesture is performed in a given application window.
+
+### MEDIAPIPE
+
+TBD
+
+### FINGERS
+
+TBD
 

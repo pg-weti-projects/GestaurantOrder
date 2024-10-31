@@ -116,13 +116,13 @@ class MainApp(QMainWindow):
         """
         if event.key() == Qt.Key_Escape:
             self.close()
-        elif event.key() == Qt.Key_1:
+        elif event.key() == Qt.Key_F1:
             self.toggle_main_widgets(self.main_widgets['main_widget'])
-        elif event.key() == Qt.Key_2:
+        elif event.key() == Qt.Key_F2:
             self.toggle_main_widgets(self.main_widgets['admin_panel'])
-        elif event.key() == Qt.Key_3:
+        elif event.key() == Qt.Key_F3:
             self.toggle_camera_preview()
-        elif event.key() == Qt.Key_H:
+        elif event.key() == Qt.Key_F4:
             self.toggle_help_window_preview()
         else:
             logger.debug(f"Unrecognized keyboard key! {event.key()}")
