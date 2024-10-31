@@ -4,7 +4,7 @@ from Mongo.mongo_manager import MongoManager
 from PySide6.QtCore import Qt, Signal
 from PySide6.QtGui import QPixmap, QFont
 from PySide6.QtWidgets import (QMainWindow, QWidget, QPushButton, QVBoxLayout, QTableWidget, QTableWidgetItem, QLabel,
-                               QFileDialog, QApplication, QHBoxLayout)
+                               QFileDialog, QApplication, QHBoxLayout, QAbstractItemView)
 from bson import ObjectId
 
 logger = logging.getLogger("app")
@@ -41,8 +41,9 @@ class AdminPanel(QWidget):
         # Table
         self.dish_table = QTableWidget()
         self.dish_table.setColumnCount(4)
+        self.dish_table.setEditTriggers(QAbstractItemView.DoubleClicked)
         self.dish_table.setHorizontalHeaderLabels(["ID", "Name", "Price", "Image"])
-        self.dish_table.itemChanged.connect(self.edit_dish)
+        self.dish_table.cellChanged.connect(self.edit_dish)
 
         self.dish_table.setColumnWidth(0, int(table_width * 0.2))  # ID
         self.dish_table.setColumnWidth(1, int(table_width * 0.4))  # Name
@@ -87,7 +88,7 @@ class AdminPanel(QWidget):
         Loud and set all dishes from the database.
         """
         return self.mongo_manager.get_order_list()
-    
+
     def update_dish_list(self):
         """
         Update dishes from the database.
@@ -147,13 +148,10 @@ class AdminPanel(QWidget):
                     logger.error(f"Failed to delete dish with ID: {dish_id} from database.")
 
 
-    def edit_dish(self, item):
+    def edit_dish(self, row, column):
         """
         Select row to edit dish and update it on database.
         """
-        row = item.row()
-        column = item.column()
-
         if column in [1, 2]:
             dish_id = self.dish_table.item(row, 0).text()
             name = self.dish_table.item(row, 1).text()
