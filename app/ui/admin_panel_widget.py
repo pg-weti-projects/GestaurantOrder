@@ -112,7 +112,7 @@ class AdminPanel(QWidget):
             else:
                 add_image_button = QPushButton("Add Image")
                 add_image_button.setFixedSize(80, 30)
-                add_image_button.clicked.connect(lambda: self.add_image(row_position))
+                add_image_button.clicked.connect(lambda _, row=row_position: self.add_image(row))
                 self.dish_table.setCellWidget(row_position, 3, add_image_button)
 
     def add_dish(self):
@@ -209,6 +209,6 @@ class AdminPanel(QWidget):
                 new_dish_id = self.mongo_manager.add_user_record(new_dish)
                 self.dish_table.setItem(row, 0, QTableWidgetItem(str(new_dish_id)))
             else:
-                updated_dish = {"_id": ObjectId(dish_id), "name": name, "price": price, "image_path": image_path}
+                updated_dish = {"_id": dish_id, "name": name, "price": price, "image_path": image_path}
                 self.mongo_manager.update_record(updated_dish)
             self.db_data_changed.emit()
