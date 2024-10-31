@@ -2,9 +2,9 @@ import logging
 from Mongo.mongo_manager import MongoManager
 
 from PySide6.QtCore import Qt, Signal
-from PySide6.QtGui import QPixmap, QFont
+from PySide6.QtGui import QPixmap, QFont, QDoubleValidator
 from PySide6.QtWidgets import (QMainWindow, QWidget, QPushButton, QVBoxLayout, QTableWidget, QTableWidgetItem, QLabel,
-                               QFileDialog, QApplication, QHBoxLayout, QAbstractItemView)
+                               QFileDialog, QApplication, QHBoxLayout, QAbstractItemView, QLineEdit)
 from bson import ObjectId
 
 logger = logging.getLogger("app")
@@ -82,6 +82,7 @@ class AdminPanel(QWidget):
         self.setLayout(main_layout)
 
         self.update_dish_list()
+        self.dish_table.cellDoubleClicked.connect(self.price_validator)
 
     def load_dishes_from_db(self):
         """
@@ -100,7 +101,10 @@ class AdminPanel(QWidget):
             row_position = self.dish_table.rowCount()
             self.dish_table.insertRow(row_position)
 
-            self.dish_table.setItem(row_position, 0, QTableWidgetItem(str(dish['_id'])))
+            id_item = QTableWidgetItem(str(dish['_id']))
+            id_item.setFlags(Qt.ItemIsSelectable | Qt.ItemIsEnabled)
+            self.dish_table.setItem(row_position, 0, id_item)
+
             self.dish_table.setItem(row_position, 1, QTableWidgetItem(dish['name']))
             self.dish_table.setItem(row_position, 2, QTableWidgetItem(str(dish['price'])))
 
@@ -179,6 +183,31 @@ class AdminPanel(QWidget):
 
         if column == 3:
             self.add_image(row)
+
+    def price_validator(self, row, column):
+        """
+        Apply a Validator to the price column editor on cell edit.
+        """
+        if column == 2:
+            price_editor = QLineEdit(self.dish_table)
+            price_validator = QDoubleValidator(0.0, 9999.99, 2)
+            price_validator.setNotation(QDoubleValidator.StandardNotation)
+            price_editor.setValidator(price_validator)
+            price_editor.setAlignment(Qt.AlignRight)
+
+            price_editor.editingFinished.connect(lambda: self.finish_editing_price(row, column, price_editor))
+
+            self.dish_table.setCellWidget(row, column, price_editor)
+            price_editor.setFocus()
+
+    def finish_editing_price(self, row, column, editor):
+        """
+        Replace the QLineEdit editor in the cell with a QTableWidgetItem after editing.
+        """
+        new_price_text = editor.text()
+
+        self.dish_table.removeCellWidget(row, column)
+        self.dish_table.setItem(row, column, QTableWidgetItem(new_price_text))
 
     @staticmethod
     def get_image_path_from_label(label):
