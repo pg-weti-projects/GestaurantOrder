@@ -245,9 +245,8 @@ class MainWidget(QWidget):
         Args:
             user_operation: Selected operation by user ( confirmed or canceled order ).
         """
-        order_number = 6
         if user_operation == "confirmed":
-            self.success_notification.emit(f"Your order has been confirmed! Your order number is {order_number}.")
+            self.success_notification.emit(f"Your order has been confirmed!")
         elif user_operation == "canceled":
             self.failure_notification.emit(f"Your order has been canceled!")
         else:
