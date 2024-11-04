@@ -32,7 +32,6 @@ class UserCamera(QObject):
         self.last_gesture: str | None = None
         self.last_save_time = 0
         self.save_interval = 1
-        self.filename = os.getenv('CAMERA_FILENAME')
 
 
         if self.mode == 'mediapipe':
