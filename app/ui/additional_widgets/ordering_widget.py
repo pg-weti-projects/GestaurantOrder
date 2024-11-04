@@ -19,6 +19,7 @@ class OrderingWidget(QWidget):
     ordered_dish = Signal(dict)
     success_order = Signal(str)
     failure_order = Signal(str)
+    change_gesture_mode = Signal(str)
 
     def __init__(self, parent: QWidget | QMainWindow, monitor_geometry: dict, selected_dish_data: dict):
         super().__init__(parent)
@@ -107,20 +108,21 @@ class OrderingWidget(QWidget):
         gesture counter status.
         """
         if not self.confirm_widget:
-            if not self.gesture_counter_works:
-            # TODO ATTACH FINGERS MODEL HERE
-                if gesture in ("Open_Palm"): # ("1", "2", "3", "4", "5", "6", "7", "8", "9", "10") TODO
-                    self.gesture_counter_works = True
+            if self.gesture_counter_works:
+                self.gesture_counter.stop_timer()
+                self.gesture_counter_works = False
+
+            if not self.gesture_counter_works and gesture != "None":
+                if gesture in ("0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"):
                     if gesture == "0":
                         self.counter_label.setText("CANCELING")
                     else:
-                        self.counter_label.setText("6") # TODO change to 'gesture'
-                    self.gesture_counter.start_timer()
-                else:
-                    self.counter_label.setText("UNKNOWN GESTURE")
-            else:
-                self.gesture_counter.stop_timer()
-                self.gesture_counter_works = False
+                        self.counter_label.setText(gesture)
+                self.gesture_counter_works = True
+                self.gesture_counter.start_timer()
+
+            if gesture == "None":
+                self.counter_label.setText("")
 
     def handle_gesture_on_timer_finished(self) -> None:
         """
@@ -133,11 +135,12 @@ class OrderingWidget(QWidget):
         of selected dish.
         """
         logger.debug(f"OrderingWidget timer stopped counting. Making action assigned to {self.last_gesture}.")
-        if self.last_gesture == ("Open_Palm"):  # TODO CHANGE Open_Palm to tuple ("1", "2", "3", "4", "5", "6", "7", "8", "9", "10")
-            self.number_to_order = int("6") # TODO change to int(self.last_gesture)
+        if self.last_gesture in ("1", "2", "3", "4", "5", "6", "7", "8", "9", "10"):
+            self.number_to_order = int(self.last_gesture)
             self._create_and_show_confirmation_widget()
         elif self.last_gesture == "0":
             self.failure_order.emit(f"You have canceled ordering {self.selected_dish_data['name']}.")
+            self.change_gesture_mode.emit("mediapipe")
             self.ordered_dish.emit({})
 
     def _create_and_show_confirmation_widget(self) -> None:
@@ -152,6 +155,7 @@ class OrderingWidget(QWidget):
             )
             self.gesture_detected.connect(self.confirm_widget.handle_gesture)
             self.confirm_widget.gesture_response.connect(self.handle_confirmation_ordering)
+            self.change_gesture_mode.emit("mediapipe")
             self.confirm_widget.show()
 
     @Slot(str)
@@ -169,8 +173,10 @@ class OrderingWidget(QWidget):
         if user_operation == "confirmed":
             self.success_order.emit(f"You have successfully ordered {self.selected_dish_data['name']}.")
             self.ordered_dish.emit({"amount": self.number_to_order, "dish_data": self.selected_dish_data})
+            self.change_gesture_mode.emit("mediapipe")
         elif user_operation == "canceled":
             self.failure_order.emit(f"You have canceled ordering {self.selected_dish_data['name']}.")
+            self.change_gesture_mode.emit("fingers")
         else:
             logger.error("Incorrect user operation from ConfirmationWidget!")
 

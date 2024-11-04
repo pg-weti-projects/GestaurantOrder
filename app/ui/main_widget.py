@@ -19,6 +19,7 @@ class MainWidget(QWidget):
     gesture_detected = Signal(str)
     success_notification = Signal(str)
     failure_notification = Signal(str)
+    change_gesture_mode = Signal(str)
 
     def __init__(self, parent: QMainWindow, monitor_geometry: dict):
         super().__init__(parent)
@@ -171,7 +172,19 @@ class MainWidget(QWidget):
             self.ordering_widget.ordered_dish.connect(self.add_ordered_dish_and_close_ordering_widget)
             self.ordering_widget.success_order.connect(self.emit_show_success_notification)
             self.ordering_widget.failure_order.connect(self.emit_show_failure_notification)
+            self.ordering_widget.change_gesture_mode.connect(self.change_gesture_detection_mode)
+            self.change_gesture_mode.emit("fingers")
             self.ordering_widget.raise_()
+
+    @Slot(str)
+    def change_gesture_detection_mode(self, new_mode: str) -> None:
+        """
+        Changes the detection mode based on the given mode name.
+        Args:
+            new_mode: Mode to change.
+        """
+        self.change_gesture_mode.emit(new_mode)
+
 
     @Slot(str)
     def emit_show_success_notification(self, notification_text: str) -> None:
@@ -205,6 +218,7 @@ class MainWidget(QWidget):
             self.ordering_widget.ordered_dish.disconnect(self.add_ordered_dish_and_close_ordering_widget)
             self.ordering_widget.success_order.disconnect(self.emit_show_success_notification)
             self.ordering_widget.failure_order.disconnect(self.emit_show_failure_notification)
+            self.ordering_widget.change_gesture_mode.disconnect(self.change_gesture_detection_mode)
             self.ordering_widget.deleteLater()
             self.ordering_widget = None
 

@@ -1,5 +1,5 @@
 import logging
-from PySide6.QtCore import Slot, Qt, Signal, QTimer
+from PySide6.QtCore import Slot, Qt, QTimer, Signal
 from PySide6.QtWidgets import QMainWindow, QStackedWidget, QVBoxLayout, QWidget
 from PySide6.QtGui import QPixmap, QImage
 
@@ -15,10 +15,10 @@ class MainApp(QMainWindow):
     Class for the main app window which contains all other widgets.
     """
     gesture_detected = Signal(str)
-
     def __init__(self, mode):
         super().__init__()
         self.setWindowTitle("GestaurantOrder")
+        self.current_mode = mode
         self.utils = Utils()
         self.engine = Engine(mode)
         self.widgets = WidgetsManager(self.utils.get_monitor_geometry(), self)
@@ -46,6 +46,9 @@ class MainApp(QMainWindow):
         self.notification_widget = None
         self.main_widgets["main_widget"].success_notification.connect(self.show_success_notification)
         self.main_widgets["main_widget"].failure_notification.connect(self.show_failure_notification)
+
+        # Connects change model signal
+        self.main_widgets["main_view_widget"].change_gesture_mode.connect(self.change_mode)
 
         # Set up main layout and widget for other widgets
         layout = QVBoxLayout()
@@ -124,8 +127,25 @@ class MainApp(QMainWindow):
             self.toggle_camera_preview()
         elif event.key() == Qt.Key_F4:
             self.toggle_help_window_preview()
+        elif event.key() == Qt.Key_X:
+            self.change_mode('mediapipe')
+        elif event.key() == Qt.Key_Z:
+            self.change_mode('fingers')
         else:
             logger.debug(f"Unrecognized keyboard key! {event.key()}")
+
+    def change_mode(self, new_mode: str):
+        """
+        Change the mode (fingers/mediapipe) and restart the engine.
+        """
+        if self.current_mode != new_mode:
+            logger.info(f"Changing mode to {new_mode}")
+            self.engine.stop()
+            self.current_mode = new_mode
+            self.engine = Engine(self.current_mode)
+            self.engine.frame_ready.connect(self.update_image)
+            self.engine.gesture_detected.connect(self.handle_gesture)
+            self.engine.start()
 
     def toggle_main_widgets(self, actual_widget: QWidget) -> None:
         """Toggle widgets defined in QStackedWidget."""
