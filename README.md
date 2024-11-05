@@ -38,9 +38,19 @@ interpreted by the application and a specific action assigned to a given gesture
 
 ### MEDIAPIPE
 
-TBD
+The MediaPipe library is used for advanced gesture recognition. It leverages a pre-trained gesture recognition 
+model, which is loaded when the application initializes. The **GestureDetector** class manages gesture detection through 
+the MediaPipe’s GestureRecognizer, which processes each frame captured from the camera. This allows the application 
+to identify various gestures with high accuracy and confidence levels, using data like hand landmarks, handedness
+to recognize specific user inputs.
 
 ### FINGERS
 
-TBD
+The **FingersDetector** class is responsible for detecting the number of fingers shown by the user and interpreting 
+the state of the hands (open or closed). It supports both single and dual-hand detection, calculating the number of 
+extended fingers on each hand. This data can be used to trigger specific actions within the app:
+
+_Finger count (0–10)_   – Indicates the selection number for menu items within the app.
+
+_Closed hand (0)_   – Used to cancel the order.
 
