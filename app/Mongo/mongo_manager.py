@@ -47,6 +47,12 @@ class MongoManager:
             del row_data["_id"]
         return self.order_collection.insert_one(row_data).inserted_id
 
+    def get_dish_by_id(self, dish_id):
+        """
+            Get all dish data from the database by its ID.
+        """
+        return self.order_collection.find_one({"_id": ObjectId(dish_id)})
+
     def update_record(self, row_data: dict):
         """
             Update user-entered data.

@@ -167,16 +167,16 @@ class AdminPanel(QWidget):
                 new_dish_id = self.mongo_manager.add_user_record(new_dish)
                 self.dish_table.setItem(row, 0, QTableWidgetItem(str(new_dish_id)))
             else:
-                updated_dish = {"_id": ObjectId(dish_id), "name": name, "price": price}
+                updated_dish = {"_id": dish_id, "name": name, "price": price}
 
                 if dish_id in self.image_paths:
                     updated_dish['image_path'] = self.image_paths[dish_id]
                 else:
-                    image_widget = self.dish_table.cellWidget(row, 3)
-                    if isinstance(image_widget, QLabel):
-                        pixmap = image_widget.pixmap()
-                        if pixmap:
-                            updated_dish['image_path'] = self.get_image_path_from_label(image_widget)
+                    if dish_id not in self.image_paths:
+                        existing_dish = self.mongo_manager.get_dish_by_id(dish_id)
+                        if existing_dish and 'image_path' in existing_dish:
+                            updated_dish['image_path'] = existing_dish['image_path']
+
 
                 self.mongo_manager.update_record(updated_dish)
             self.db_data_changed.emit()
@@ -221,6 +221,7 @@ class AdminPanel(QWidget):
         image_path, _ = file_dialog.getOpenFileName(self, "Choose Image", "",
                                                     "Images (*.png *.jpg *.bmp)")
         if image_path:
+            self.image_paths[row] = image_path
             pixmap = QPixmap(image_path).scaled(50, 50)
             label = QLabel()
             label.setPixmap(pixmap)
@@ -232,6 +233,9 @@ class AdminPanel(QWidget):
 
             if dish_id:
                 self.image_paths[dish_id] = image_path
+
+                updated_dish = {"_id": dish_id, "name": name, "price": price, "image_path": image_path}
+                self.mongo_manager.update_record(updated_dish)
 
             if not dish_id:
                 new_dish = {"name": name, "price": price, "image_path": image_path}
