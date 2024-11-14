@@ -1,7 +1,7 @@
 # custom options
 database_data
 *.json
-*_trial_marker
+*_trial_*
 
 # Byte-compiled / optimized / DLL files
 __pycache__/
