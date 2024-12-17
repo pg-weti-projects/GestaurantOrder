@@ -1,5 +1,6 @@
 from ..user_camera import UserCamera
 import cv2
+from cvzone import HandTrackingModule
 
 
 class FingersDetector(UserCamera):
@@ -9,6 +10,16 @@ class FingersDetector(UserCamera):
             mode (str): The mode of the camera is 'fingers'.
         """
         super().__init__(mode=mode)
+        self.hand = HandTrackingModule.HandDetector()
+
+    def process_frame(self, frame):
+        """
+        Processes a video frame to detect and display gestures.
+        """
+        hands, frame = self.hand.findHands(frame)
+        gestures = self.detect_gesture(hands)
+        gestures = self.display_gestures(frame, gestures)
+        return gestures, frame
 
     def detect_gesture(self, hands):
         gestures = {}

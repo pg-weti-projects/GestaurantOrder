@@ -30,6 +30,14 @@ class GestureDetector(UserCamera):
         options = vision.GestureRecognizerOptions(base_options=base_options)
         self.recognizer = vision.GestureRecognizer.create_from_options(options)
 
+    def process_frame(self, frame):
+        """
+            Processes a video frame to detect and display gestures.
+        """
+        gestures = self.detect_gesture(frame)
+        gestures = self.display_gestures(frame, gestures)
+        return gestures, frame
+
     def detect_gesture(self, frame):
         """
             Detect gestures in the given frame using MediaPipe.
@@ -48,7 +56,7 @@ class GestureDetector(UserCamera):
             self.load_model()
 
         if frame is None or frame.size == 0:
-            logger.error("Error: Frame is empty.")
+            logger.error("Frame is empty.")
             return None
         # Convert frame BGR to RGB for MediaPipe
         try:
