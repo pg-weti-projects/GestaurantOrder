@@ -35,9 +35,8 @@ class UserCamera(QObject):
 
     def _capture_image(self):
         """
-        Capture image frames for two modes:
-        - mediapipe: Gesture detection
-        - fingers: Fingers detection
+        This method continuously captures frames from the camera feed and processes them based on
+        the selected mode ('fingers' or 'mediapipe').
         """
         while self._running:
             ret, frame = self._cap.read()
@@ -51,7 +50,6 @@ class UserCamera(QObject):
                 h, w, ch = rgb_frame.shape
                 q_img = QImage(rgb_frame.data, w, h, w * ch, QImage.Format_RGB888)
                 self.frame_ready.emit(q_img)
-
 
     def _emit_gesture_signal(self, gestures):
         """
