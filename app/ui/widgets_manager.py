@@ -37,11 +37,10 @@ class WidgetsManager:
         helper_widget.setStyleSheet("background-color: grey;")
 
         label_text = """Available functions:\n
-        \t1 - Show/Hide main window\n
-        \t2 - Show/Hide test widget\n
-        \t3 - Show/Hide admin panel\n
-        \t9 - Show/Hide camera preview\n
-        \tH - Show help window\n
+        \tF1 - Show/Hide main window\n
+        \tF2 - Show/Hide admin panel\n
+        \tF3 - Show help window\n
+        \tF4 - Show/Hide camera preview\n
         \tESC - Exit application
         """
 
