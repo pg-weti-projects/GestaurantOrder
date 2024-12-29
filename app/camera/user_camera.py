@@ -22,7 +22,7 @@ class UserCamera(QObject):
                     or 'mediapipe' for gesture detection using MediaPipe. Default is 'fingers'.
         """
         super().__init__()
-        self.cap = cv2.VideoCapture(int(os.getenv('CAMERA_NUMBER')))
+        self.cap = cv2.VideoCapture(int(os.getenv('CAMERA_NUMBER', 0)))
         self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
         self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
         self.running = True
