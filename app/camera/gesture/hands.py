@@ -17,6 +17,12 @@ class GestureDetector(UserCamera):
         """
         super().__init__(mode=mode)
         self.recognizer = None
+        self.hand_detector = mp.solutions.hands.Hands(
+            static_image_mode=False,
+            max_num_hands=2,
+            min_detection_confidence=0.5,
+            min_tracking_confidence=0.5
+        )
         self.load_model()
 
     def load_model(self):
@@ -30,41 +36,53 @@ class GestureDetector(UserCamera):
         options = vision.GestureRecognizerOptions(base_options=base_options)
         self.recognizer = vision.GestureRecognizer.create_from_options(options)
 
+    def process_frame(self, frame):
+        """
+            Processes a video frame to detect and display gestures.
+        """
+        if frame is None or frame.size == 0:
+            logger.error("Frame is empty.")
+            return None, frame
+
+        gestures, frame_rgb = self.detect_gesture(frame)
+        results = self.hand_detector.process(frame_rgb)
+        gestures = self.display_gestures(frame, gestures)
+
+        if results.multi_hand_landmarks and results.multi_handedness:
+            for hand_landmarks, hand_handedness in zip(results.multi_hand_landmarks, results.multi_handedness):
+                if hand_handedness.classification[0].label == "Right":
+                    label = "Left"
+                else:
+                    label = "Right"
+                x_coords = [lm.x for lm in hand_landmarks.landmark]
+                y_coords = [lm.y for lm in hand_landmarks.landmark]
+                h, w, _ = frame.shape
+
+                x_min, x_max = int(min(x_coords) * w), int(max(x_coords) * w)
+                y_min, y_max = int(min(y_coords) * h), int(max(y_coords) * h)
+
+                cv2.rectangle(frame, (x_min, y_min), (x_max, y_max), (255, 0, 255), 2)
+                cv2.putText(frame, label, (x_min, y_min - 10), cv2.FONT_HERSHEY_SIMPLEX,
+                    1, (255, 0, 255), 2, cv2.LINE_AA)
+        return gestures, frame
+
     def detect_gesture(self, frame):
         """
-            Detect gestures in the given frame using MediaPipe.
-
-            Returns:
-                GestureRecognizerResult: An object with the following attributes:
-                    - gestures (list): A list of recognized gestures, where each gesture contains the category name and
-                    confidence score.
-                    - handedness (list): A list indicating the handedness (e.g., left or right hand) detected in
-                    the frame.
-                    - hand_landmarks (list): A list of 3D landmarks of the hand in the image.
-                    - hand_world_landmarks (list): A list of 3D landmarks of the hand in world coordinates.
-                If no gestures are detected, these attributes will be empty lists.
+            Convert the frame from BGR to RGB and detect gestures using MediaPipe.
         """
         if self.recognizer is None:
             self.load_model()
-
-        if frame is None or frame.size == 0:
-            logger.error("Error: Frame is empty.")
-            return None
-        # Convert frame BGR to RGB for MediaPipe
         try:
             frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-        except cv2.error as e:
-            logger.error(f"OpenCV error during color conversion: {e}")
-            return None
-        mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
-
-        try:
+            mp_image = mp.Image(image_format=mp.ImageFormat.SRGB, data=frame_rgb)
             gesture_result = self.recognizer.recognize(mp_image)
+            return gesture_result, frame_rgb
+        except cv2.error as e:
+            logger.error(f"Error during color conversion: {e}")
         except Exception as e:
             logger.error(f"Error during gesture recognition: {e}")
-            return None
 
-        return gesture_result
+        return None
 
     def display_gestures(self, frame, gestures):
         """

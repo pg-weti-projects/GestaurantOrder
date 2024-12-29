@@ -2,8 +2,6 @@ import logging
 import time
 from abc import abstractmethod
 import cv2
-from cvzone import HandTrackingModule
-import mediapipe as mp
 import os
 from PySide6.QtCore import Signal, QObject
 from PySide6.QtGui import QImage
@@ -22,62 +20,46 @@ class UserCamera(QObject):
                     or 'mediapipe' for gesture detection using MediaPipe. Default is 'fingers'.
         """
         super().__init__()
-        self.cap = cv2.VideoCapture(int(os.getenv('CAMERA_NUMBER', 0)))
-        self.cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
-        self.cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
-        self.running = True
+        self._cap = cv2.VideoCapture(int(os.getenv('CAMERA_NUMBER', 0)))
+        self._cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1920)
+        self._cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 1080)
 
-        self.hand = HandTrackingModule.HandDetector()
-        self.mode = mode
-        self.last_gesture: str | None = None
-        self.last_save_time = 0
-        self.save_interval = 1
-
-
-        if self.mode == 'mediapipe':
-            self.mp_hands = mp.solutions.hands.Hands(
-                static_image_mode=False, max_num_hands=1, min_detection_confidence=0.5, min_tracking_confidence=0.5)
-            self.mp_draw = mp.solutions.drawing_utils
-
-        if not self.cap.isOpened():
+        if not self._cap.isOpened():
             raise ValueError("Could not open video stream from selected camera!")
 
-    def capture_image(self):
+        self._running = True
+        self._mode = mode
+        self._last_gesture: str | None = None
+        self._last_save_time = 0
+        self._save_interval = 1
+
+    def _capture_image(self):
         """
-        Capture image frames for two modes:
-        - mediapipe: Gesture detection
-        - fingers: Fingers detection
+        This method continuously captures frames from the camera feed and processes them based on
+        the selected mode ('fingers' or 'mediapipe').
         """
-        while self.running:
-            ret, frame = self.cap.read()
+        while self._running:
+            ret, frame = self._cap.read()
             if ret:
 
-                if ret and self.mode == 'fingers':
-                    # Process finger detection
-                    hands, frame = self.hand.findHands(frame)
-                    gestures = self.detect_gesture(hands)
-                    gestures = self.display_gestures(frame, gestures)
+                gestures, frame = self.process_frame(frame)
 
-                elif ret and self.mode == 'mediapipe':
-                    # Process gesture detection with MediaPipe
-                    gestures = self.detect_gesture(frame)
-                    gestures = self.display_gestures(frame, gestures)
-
-                current_time = time.time()
-                if gestures != self.last_gesture and current_time - self.last_save_time >= self.save_interval:
-                    self.last_gesture = gestures
-                    self.gesture_detected.emit(self.last_gesture)
-                    self.last_save_time = current_time
+                self._emit_gesture_signal(gestures)
 
                 rgb_frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-
-                # Get image dimensions
                 h, w, ch = rgb_frame.shape
-
-                # Create a QImage from the RGB frame
                 q_img = QImage(rgb_frame.data, w, h, w * ch, QImage.Format_RGB888)
-
                 self.frame_ready.emit(q_img)
+
+    def _emit_gesture_signal(self, gestures):
+        """
+        Emit gesture signal by the 1 second between detected gestures.
+        """
+        current_time = time.time()
+        if gestures != self._last_gesture and current_time - self._last_save_time >= self._save_interval:
+            self._last_gesture = gestures
+            self.gesture_detected.emit(gestures)
+            self._last_save_time = current_time
 
     @abstractmethod
     def detect_gesture(self, hands):
@@ -87,8 +69,12 @@ class UserCamera(QObject):
     def display_gestures(self, frame, gestures):
         pass
 
+    @abstractmethod
+    def process_frame(self, frame):
+        pass
+
     def stop(self):
-        self.running = False
+        self._running = False
 
     def __del__(self):
-        self.cap.release()
+        self._cap.release()

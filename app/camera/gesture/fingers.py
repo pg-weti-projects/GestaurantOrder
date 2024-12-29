@@ -1,5 +1,6 @@
 from ..user_camera import UserCamera
 import cv2
+from cvzone import HandTrackingModule
 
 
 class FingersDetector(UserCamera):
@@ -9,14 +10,24 @@ class FingersDetector(UserCamera):
             mode (str): The mode of the camera is 'fingers'.
         """
         super().__init__(mode=mode)
+        self.hand = HandTrackingModule.HandDetector()
+
+    def process_frame(self, frame):
+        """
+        Processes a video frame to detect and display gestures.
+        """
+        hands, frame = self.hand.findHands(frame)
+        gestures = self.detect_gesture(hands)
+        gestures = self.display_gestures(frame, gestures)
+        return gestures, frame
 
     def detect_gesture(self, hands):
         gestures = {}
 
         # Handle case where two hands are detected
         if hands and len(hands) == 2:
-            left = hands[0]
-            right = hands[1]
+            left = hands[0] if hands[0]["type"] == "Left" else hands[1]
+            right = hands[1] if hands[0]["type"] == "Left" else hands[0]
             right_fingers = self.hand.fingersUp(right)
             left_fingers = self.hand.fingersUp(left)
 
@@ -30,16 +41,23 @@ class FingersDetector(UserCamera):
 
         # Handle case where only one hand is detected
         elif hands and len(hands) == 1:
-            left = hands[0]
-            left_fingers = self.hand.fingersUp(left)
+            hand = hands[0]
+            fingers = self.hand.fingersUp(hand)
 
-            gestures['left_num_fingers'] = sum(left_fingers)
-            gestures['left_is_open'] = all(left_fingers)
+            if hand["type"] == "Left":
+                gestures['left_num_fingers'] = sum(fingers)
+                gestures['left_is_open'] = all(fingers)
 
-            gestures['right_num_fingers'] = 0
-            gestures['right_is_open'] = False
+                gestures['right_num_fingers'] = 0
+                gestures['right_is_open'] = False
+            else:
+                gestures['right_num_fingers'] = sum(fingers)
+                gestures['right_is_open'] = all(fingers)
 
-            gestures['all_fingers'] = sum(left_fingers)
+                gestures['left_num_fingers'] = 0
+                gestures['left_is_open'] = False
+
+            gestures['all_fingers'] = sum(fingers)
 
         # Handle case where no hands are detected
         else:

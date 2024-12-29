@@ -26,7 +26,7 @@ class Engine(QObject):
         self.detector.moveToThread(self.camera_thread)
         self.detector.frame_ready.connect(self.process_frame)
         self.detector.gesture_detected.connect(self.handle_gesture)
-        self.camera_thread.started.connect(self.detector.capture_image)
+        self.camera_thread.started.connect(self.detector._capture_image)
 
     def start(self):
         """Starts camera thread"""

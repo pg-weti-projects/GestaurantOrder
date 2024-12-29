@@ -171,7 +171,7 @@ class OrderingWidget(QWidget):
             user_operation: Emitted operation selected by user ( confirmed or canceled ).
         """
         if user_operation == "confirmed":
-            self.success_order.emit(f"You have successfully added {self.selected_dish_data['name']} to your order.")
+            self.success_order.emit(f"You have successfully ordered {self.selected_dish_data['name']}.")
             self.ordered_dish.emit({"amount": self.number_to_order, "dish_data": self.selected_dish_data})
             self.change_gesture_mode.emit("mediapipe")
         elif user_operation == "canceled":

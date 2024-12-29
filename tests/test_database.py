@@ -29,7 +29,7 @@ class TestMongoDB(unittest.TestCase):
 
         self.mongo_manager.client = MagicMock()
         self.mongo_manager.db = MagicMock()
-        self.mongo_manager.order_collection = MagicMock()
+        self.mongo_manager.menu_collection = MagicMock()
 
     @patch('app.Mongo.mongo_manager.MongoClient')
     def test_connection(self, MockMongoClient):
@@ -54,11 +54,11 @@ class TestMongoDB(unittest.TestCase):
             "name": "Pizza",
             "price": 10.99
         }
-        self.mongo_manager.order_collection.find_one = MagicMock(return_value=existing_record)
+        self.mongo_manager.menu_collection.find_one = MagicMock(return_value=existing_record)
 
         fetched_record = self.mongo_manager.get_record_by_id(existing_record["_id"])
         self.assertEqual(fetched_record, existing_record)
-        self.mongo_manager.order_collection.find_one.assert_called_once_with({"_id": ObjectId(existing_record["_id"])})
+        self.mongo_manager.menu_collection.find_one.assert_called_once_with({"_id": ObjectId(existing_record["_id"])})
         logger.info("Record fetched successfully!")
 
     @patch('app.Mongo.mongo_manager.MongoClient')
@@ -69,14 +69,14 @@ class TestMongoDB(unittest.TestCase):
         """
         mock_insert_result = MagicMock()
         mock_insert_result.inserted_id = str(ObjectId())
-        self.mongo_manager.order_collection.insert_one = MagicMock(return_value=mock_insert_result)
+        self.mongo_manager.menu_collection.insert_one = MagicMock(return_value=mock_insert_result)
 
         user_data = {"image_path": "", "name": "Pizza", "price": 10.99}
-        inserted_id = self.mongo_manager.add_user_record(user_data)
+        inserted_id = self.mongo_manager.add_record(user_data)
 
         # Assert that the inserted_id matches the mock inserted_id
         self.assertEqual(inserted_id, mock_insert_result.inserted_id)
-        self.mongo_manager.order_collection.insert_one.assert_called_once_with(user_data)
+        self.mongo_manager.menu_collection.insert_one.assert_called_once_with(user_data)
 
         logger.info("User record added and validated successfully!")
 
@@ -101,14 +101,14 @@ class TestMongoDB(unittest.TestCase):
         }
         mock_update_result = MagicMock()
         mock_update_result.modified_count = 1
-        self.mongo_manager.order_collection.update_one = MagicMock(return_value=mock_update_result)
+        self.mongo_manager.menu_collection.update_one = MagicMock(return_value=mock_update_result)
         result = self.mongo_manager.update_record(updated_data)
 
         if "_id" in updated_data:
             del updated_data["_id"]
 
-        self.mongo_manager.order_collection.update_one.assert_called_once_with({"_id": ObjectId(existing_record["_id"])},
-                                                                               {"$set": updated_data})
+        self.mongo_manager.menu_collection.update_one.assert_called_once_with({"_id": ObjectId(existing_record["_id"])},
+                                                                              {"$set": updated_data})
         self.assertEqual(result.modified_count, 1)
 
         logger.info("User record updated and validated successfully!")
@@ -126,16 +126,16 @@ class TestMongoDB(unittest.TestCase):
         # Mock insert
         mock_insert_result = MagicMock()
         mock_insert_result.inserted_id = inserted_id
-        self.mongo_manager.order_collection.insert_one = MagicMock(return_value=mock_insert_result)
-        self.mongo_manager.add_user_record(user_data)
+        self.mongo_manager.menu_collection.insert_one = MagicMock(return_value=mock_insert_result)
+        self.mongo_manager.add_record(user_data)
 
         mock_delete_result = MagicMock()
         mock_delete_result.deleted_count = 1
-        self.mongo_manager.order_collection.delete_one = MagicMock(return_value=mock_delete_result)
+        self.mongo_manager.menu_collection.delete_one = MagicMock(return_value=mock_delete_result)
 
-        is_deleted = self.mongo_manager.delete_record_from_db(inserted_id)
+        is_deleted = self.mongo_manager.delete_record(inserted_id)
         self.assertTrue(is_deleted)
-        self.mongo_manager.order_collection.delete_one.assert_called_once_with({"_id": ObjectId(inserted_id)})
+        self.mongo_manager.menu_collection.delete_one.assert_called_once_with({"_id": ObjectId(inserted_id)})
 
         logger.info("User record deleted successfully!")
 

@@ -143,7 +143,7 @@ class AdminPanel(QWidget):
         if current_row != -1:
             dish_id = self.dish_table.item(current_row, 0).text()
             if dish_id:
-                success = self.mongo_manager.delete_record_from_db(dish_id)
+                success = self.mongo_manager.delete_record(dish_id)
                 if success:
                     self.dish_table.removeRow(current_row)
                     logger.info(f"Successfully deleted dish with ID: {dish_id}")
@@ -164,7 +164,7 @@ class AdminPanel(QWidget):
 
             if not dish_id:
                 new_dish = {"name": name, "price": price, "image_path": ""}
-                new_dish_id = self.mongo_manager.add_user_record(new_dish)
+                new_dish_id = self.mongo_manager.add_record(new_dish)
                 self.dish_table.setItem(row, 0, QTableWidgetItem(str(new_dish_id)))
             else:
                 updated_dish = {"_id": dish_id, "name": name, "price": price}
@@ -239,7 +239,7 @@ class AdminPanel(QWidget):
 
             if not dish_id:
                 new_dish = {"name": name, "price": price, "image_path": image_path}
-                new_dish_id = self.mongo_manager.add_user_record(new_dish)
+                new_dish_id = self.mongo_manager.add_record(new_dish)
                 self.dish_table.setItem(row, 0, QTableWidgetItem(str(new_dish_id)))
             else:
                 updated_dish = {"_id": dish_id, "name": name, "price": price, "image_path": image_path}
