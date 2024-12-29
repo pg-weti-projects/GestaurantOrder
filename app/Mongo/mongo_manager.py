@@ -30,6 +30,19 @@ class MongoManager:
             del row_data["_id"]
         return self.menu_collection.insert_one(row_data).inserted_id
 
+    def get_record_by_id(self, record_id: str):
+        """
+        Fetch a single record from the database by its ID.
+
+        """
+        try:
+            object_id = ObjectId(record_id)
+            record = self.menu_collection.find_one({"_id": object_id})
+            return record
+        except Exception as e:
+            logger.error(f"Failed to fetch record by ID: {e}")
+            return None
+
     def update_record(self, row_data: dict):
         """
             Update user-entered data.

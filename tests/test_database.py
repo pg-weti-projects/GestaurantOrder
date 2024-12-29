@@ -45,14 +45,30 @@ class TestMongoDB(unittest.TestCase):
         logger.info("MongoDB connected successfully!")
 
     @patch('app.Mongo.mongo_manager.MongoClient')
-    def test_add_record(self, MockMongoClient):
+    def test_read_record(self, MockMongoClient):
+        """
+        Test that verifies a record can be fetched from the database.
+        """
+        existing_record = {
+            "_id": str(ObjectId()),
+            "name": "Pizza",
+            "price": 10.99
+        }
+        self.mongo_manager.menu_collection.find_one = MagicMock(return_value=existing_record)
+
+        fetched_record = self.mongo_manager.get_record_by_id(existing_record["_id"])
+        self.assertEqual(fetched_record, existing_record)
+        self.mongo_manager.menu_collection.find_one.assert_called_once_with({"_id": ObjectId(existing_record["_id"])})
+        logger.info("Record fetched successfully!")
+
+    @patch('app.Mongo.mongo_manager.MongoClient')
+    def test_add_record_success(self, MockMongoClient):
         """
         This test adds a new record and validates that it was successfully
         inserted into the collection.
         """
         mock_insert_result = MagicMock()
         mock_insert_result.inserted_id = str(ObjectId())
-
         self.mongo_manager.menu_collection.insert_one = MagicMock(return_value=mock_insert_result)
 
         user_data = {"image_path": "", "name": "Pizza", "price": 10.99}
